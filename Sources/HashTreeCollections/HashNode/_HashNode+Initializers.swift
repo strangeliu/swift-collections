@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -164,8 +166,10 @@ extension _HashNode {
       count: child1.count &+ child2.count
     ) { children, items in
       assert(items.count == 0 && children.count == 2)
-      children.initializeElement(at: 0, to: child1)
-      children.initializeElement(at: 1, to: child2)
+      let i1 = child1Bucket < child2Bucket ? 0 : 1
+      let i2 = 1 &- i1
+      children.initializeElement(at: i1, to: child1)
+      children.initializeElement(at: i2, to: child2)
     }
     r.node._invariantCheck()
     return r.node

@@ -2,16 +2,18 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   internal init(_from input: some StringProtocol) {
     var builder = _Rope.Builder()
@@ -81,29 +83,30 @@ extension BigString {
       to: range.upperBound.utf8Offset,
       in: _UTF8Metric())
     var old = other._breakState(upTo: range.lowerBound)
-    var new = state
-    self._rope.resyncBreaksToEnd(old: &old, new: &new)
+    self._rope.resyncBreaksToEnd(old: &old, new: &state)
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension String {
   public init(_ big: BigString) {
     guard !big.isEmpty else {
       self.init()
       return
     }
-    if big._rope.isSingleton {
-      self = big._rope[big._rope.startIndex].string
-      return
-    }
-    self.init()
-    self.reserveCapacity(big._utf8Count)
-    for chunk in big._rope {
-      self.append(chunk.string)
+
+    self.init(unsafeUninitializedCapacity: big._utf8Count) {
+      var buffer = $0
+
+      for chunk in big._rope {
+        let result = buffer.initialize(fromContentsOf: chunk._bytes)
+        buffer = buffer.extracting(result...)
+      }
+
+      return big._utf8Count
     }
   }
-  
+
   internal init(_from big: BigString, in range: Range<BigString.Index>) {
     self.init()
 
@@ -116,22 +119,35 @@ extension String {
     let utf8Capacity = end.utf8Offset - start.utf8Offset
     guard utf8Capacity > 0 else { return }
 
-    self.reserveCapacity(utf8Capacity)
+    self.init(unsafeUninitializedCapacity: utf8Capacity) {
+      let startRopeIndex = start._rope!
+      let endRopeIndex = end._rope!
 
-    let startRopeIndex = start._rope!
-    let endRopeIndex = end._rope!
-    if startRopeIndex == endRopeIndex {
-      self += big._rope[startRopeIndex].string[start._chunkIndex ..< end._chunkIndex]
-      return
-    }
+      var dest = $0
 
-    self += big._rope[startRopeIndex].string[start._chunkIndex...]
-    var i = big._rope.index(after: startRopeIndex)
-    while i < endRopeIndex {
-      self += big._rope[i].string
-      big._rope.formIndex(after: &i)
+      // Fast path: The entire contents of range exist within the same chunk.
+      if startRopeIndex == endRopeIndex {
+        let src = big._rope[startRopeIndex]._bytes.extracting(start._chunkIndex.utf8Offset ..< end._chunkIndex.utf8Offset)
+        return dest.initialize(fromContentsOf: src)
+      }
+
+      var src = big._rope[startRopeIndex]._bytes.extracting(start._chunkIndex.utf8Offset...)
+      var result = dest.initialize(fromContentsOf: src)
+      dest = dest.extracting(result...)
+
+      var i = big._rope.index(after: startRopeIndex)
+      while i < endRopeIndex {
+        let initialized = dest.initialize(fromContentsOf: big._rope[i]._bytes)
+        result += initialized
+        dest = dest.extracting(initialized...)
+        big._rope.formIndex(after: &i)
+      }
+
+      src = big._rope[endRopeIndex]._bytes.extracting(..<end._chunkIndex.utf8Offset)
+      result += dest.initialize(fromContentsOf: src)
+
+      return result
     }
-    self += big._rope[endRopeIndex].string[..<end._chunkIndex]
   }
 
   public init(_ big: BigSubstring) {
@@ -147,4 +163,4 @@ extension String {
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

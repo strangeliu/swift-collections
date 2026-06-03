@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -505,7 +507,7 @@ class TestRope: CollectionTestCase {
   func checkEqual(
     _ x: Rope<Chunk>,
     _ y: [Int],
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     checkEqual(x, chunkify(y), file: file, line: line)
@@ -514,7 +516,7 @@ class TestRope: CollectionTestCase {
   func checkEqual(
     _ x: Rope<Chunk>,
     _ y: [Chunk],
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     let u = Array(x)
@@ -525,7 +527,7 @@ class TestRope: CollectionTestCase {
     _ a: Rope<Chunk>,
     _ b: [Int],
     range: Range<Int>,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     var x = a

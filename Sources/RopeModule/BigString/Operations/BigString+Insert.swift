@@ -2,16 +2,18 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   mutating func _insert(
     contentsOf other: __owned Substring,
@@ -23,7 +25,7 @@ extension BigString {
       self.append(contentsOf: other)
       return
     }
-    
+
     // Note: we must disable the forward peeking optimization as we'll need to know the actual
     // full grapheme breaking state of the ingester at the start of the insertion.
     // (We'll use it to resync grapheme breaks in the parts that follow the insertion.)
@@ -36,7 +38,7 @@ extension BigString {
     case let .inline(r):
       assert(ingester.isAtEnd)
       guard var r = r else { break }
-      ci = String.Index(_utf8Offset: ci._utf8Offset + r.increment)
+      ci = _Chunk.Index(utf8Offset: ci.utf8Offset + r.increment)
       let i = Index(baseUTF8Offset: index._utf8BaseOffset, _rope: ri, chunk: ci)
       resyncBreaks(startingAt: i, old: &r.old, new: &r.new)
     case let .split(spawn: spawn, endStates: r):
@@ -54,7 +56,7 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   mutating func _insert(contentsOf other: __owned Self, at index: Index) {
     guard index < endIndex else {
@@ -68,8 +70,7 @@ extension BigString {
     }
     if other._rope.isSingleton {
       // Fast path when `other` is tiny.
-      let chunk = other._rope.first!
-      insert(contentsOf: chunk.string, at: index)
+      insert(contentsOf: other[...], at: index)
       return
     }
     var builder = self.split(at: index)
@@ -78,7 +79,7 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   mutating func _insert(contentsOf other: __owned Self, in range: Range<Index>, at index: Index) {
     guard index < endIndex else {
@@ -98,4 +99,4 @@ extension BigString {
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

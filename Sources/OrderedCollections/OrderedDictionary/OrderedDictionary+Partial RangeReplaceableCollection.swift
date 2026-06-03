@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -37,7 +39,7 @@ extension OrderedDictionary {
 
   /// Removes all members from the dictionary.
   ///
-  /// - Parameter keepingCapacity: If `true`, the dictionary's storage capacity
+  /// - Parameter keepCapacity: If `true`, the dictionary's storage capacity
   ///   is preserved; if `false`, the underlying storage is released. The
   ///   default is `false`.
   ///
@@ -121,8 +123,8 @@ extension OrderedDictionary {
   ///    high-quality hashing.
   @inlinable
   public mutating func removeLast(_ n: Int) {
-    precondition(n >= 0, "Can't remove a negative number of elements")
-    precondition(n <= count, "Can't remove more elements than there are in the collection")
+    precondition(n >= 0, "Cannot remove a negative number of items")
+    precondition(n <= count, "Cannot remove more elements than there are in the collection")
     _keys.removeLast(n)
     _values.removeLast(n)
   }
@@ -152,8 +154,8 @@ extension OrderedDictionary {
   /// - Complexity: O(`count`).
   @inlinable
   public mutating func removeFirst(_ n: Int) {
-    precondition(n >= 0, "Can't remove a negative number of elements")
-    precondition(n <= count, "Can't remove more elements than there are in the collection")
+    precondition(n >= 0, "Cannot remove a negative number of elements")
+    precondition(n <= count, "Cannot remove more elements than there are in the collection")
     _keys.removeFirst(n)
     _values.removeFirst(n)
   }

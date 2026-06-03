@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -15,6 +17,7 @@ import XCTest
 #else
 @_spi(Testing) import OrderedCollections
 import _CollectionsTestSupport
+import InternalCollectionsUtilities
 #endif
 
 extension OrderedSet: SetAPIExtras {}
@@ -379,7 +382,7 @@ class OrderedSetTests: CollectionTestCase {
             expectEqual(set[index], count)
             expectEqualElements(set[..<index], 0 ..< offset)
             expectEqualElements(set[set.index(after: index)...], offset ..< count)
-            expectEqual(set.firstIndex(of: count), index, "Can't find newly inserted element")
+            expectEqual(set.firstIndex(of: count), index, "Cannot find newly inserted element")
 
             let i2 = set.index(set.startIndex, offsetBy: offset / 2)
             let (inserted2, index2) = set.insert(count, at: i2)
@@ -783,6 +786,28 @@ class OrderedSetTests: CollectionTestCase {
     }
   }
 
+  func test_negative_capacity() {
+    // https://github.com/apple/swift-collections/issues/608
+    let set = OrderedSet<Int>(minimumCapacity: -1)
+    expectEqual(set.__unstable.scale, 0)
+    expectEqual(set.__unstable.reservedScale, 0)
+    expectEqual(set.__unstable.minimumCapacity, 0)
+    expectTrue(set.isEmpty)
+
+    let set2 = OrderedSet<Int>(minimumCapacity: -1, persistent: true)
+    expectEqual(set2.__unstable.scale, 0)
+    expectEqual(set2.__unstable.reservedScale, 0)
+    expectEqual(set2.__unstable.minimumCapacity, 0)
+    expectTrue(set2.isEmpty)
+
+    var set3 = OrderedSet<Int>([1, 2, 3])
+    set3.reserveCapacity(-1)
+    expectEqual(set3.count, 3)
+    expectTrue(set3.contains(1))
+    expectTrue(set3.contains(2))
+    expectTrue(set3.contains(3))
+  }
+
   func test_init_minimumCapacity() {
     withEvery("capacity", in: 0 ..< 1000) { capacity in
       let expectedScale = OrderedSet<Int>._scale(forCapacity: capacity)
@@ -913,7 +938,7 @@ class OrderedSetTests: CollectionTestCase {
   }
 
   func withSampleRanges(
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line,
     _ body: (Range<Int>, Range<Int>) throws -> Void
   ) rethrows {
@@ -957,6 +982,20 @@ class OrderedSetTests: CollectionTestCase {
       expectEqualElements(actual1u, expected)
 
       let actual2 = actual1.union(u2).union(u1)
+      expectEqualElements(actual2, expected)
+    }
+  }
+
+  func test_appending_Self() {
+    withSampleRanges { r1, r2 in
+      let expected = Set(r1).union(r2).sorted()
+
+      let u1 = OrderedSet(r1)
+      let u2 = OrderedSet(r2)
+      let actual1 = u1.appending(contentsOf: u2)
+      expectEqualElements(actual1, expected)
+
+      let actual2 = actual1.appending(contentsOf: u2).appending(contentsOf: u1)
       expectEqualElements(actual2, expected)
     }
   }

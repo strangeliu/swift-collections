@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -129,7 +131,7 @@ final class BitSetTest: CollectionTestCase {
   func withInterestingSets(
     _ label: String,
     maximum: Int,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line,
     run body: (Set<Int>) -> Void
   ) {
@@ -190,6 +192,29 @@ final class BitSetTest: CollectionTestCase {
     }
   }
 
+  func test_makeIterator_from() {
+    let max = 1000
+    withInterestingSets("input", maximum: max) { input in
+      let bits = BitSet(input)
+      let values = input.sorted()
+
+      withEvery("i", in: values.indices) { i in
+        let j = bits.firstIndex(of: values[i])!
+        var it = bits.makeIterator(from: j)
+
+        for k in i ..< values.count {
+          expectNotNil(it.next()) { v in
+            expectEqual(v, values[k])
+          }
+        }
+        expectNil(it.next())
+      }
+
+      var it = bits.makeIterator(from: bits.endIndex)
+      expectNil(it.next())
+    }
+  }
+
   func test_hashable() {
     // This is a silly test, but it does exercise hashing a bit.
     let classes: [[BitSet]] = [
@@ -242,16 +267,12 @@ final class BitSetTest: CollectionTestCase {
       var expected: Set<Int> = []
       let input = (0 ..< count).shuffled(using: &rng)
       withEvery("i", in: input.indices) { i in
-        let (i1, m1) = actual.insert(input[i])
-        expected.insert(input[i])
-        expectTrue(i1)
-        expectEqual(m1, input[i])
+        let v = input[i]
+        expectTrue(actual.insert(v) == expected.insert(v))
         if i % 25 == 0 {
           expectEqual(Array(actual), expected.sorted())
         }
-        let (i2, m2) = actual.insert(input[i])
-        expectFalse(i2)
-        expectEqual(m2, m1)
+        expectTrue(actual.insert(v) == expected.insert(v))
       }
       expectEqual(Array(actual), expected.sorted())
     }
@@ -265,13 +286,12 @@ final class BitSetTest: CollectionTestCase {
       var expected: Set<Int> = []
       let input = (0 ..< count).shuffled(using: &rng)
       withEvery("i", in: input.indices) { i in
-        let old = actual.update(with: input[i])
-        expected.update(with: input[i])
-        expectEqual(old, input[i])
+        let v = input[i]
+        expectEqual(actual.update(with: v), expected.update(with: v))
         if i % 25 == 0 {
           expectEqual(Array(actual), expected.sorted())
         }
-        expectNil(actual.update(with: input[i]))
+        expectEqual(actual.update(with: v), expected.update(with: v))
       }
       expectEqual(Array(actual), expected.sorted())
     }
@@ -289,13 +309,11 @@ final class BitSetTest: CollectionTestCase {
       
       withEvery("i", in: input.indices) { i in
         let v = input[i]
-        let old = actual.remove(v)
-        expected.remove(v)
-        expectEqual(old, v)
+        expectEqual(actual.remove(v), expected.remove(v))
         if i % 25 == 0 {
           expectEqual(Array(actual), expected.sorted())
         }
-        expectNil(actual.remove(v))
+        expectEqual(actual.remove(v), expected.remove(v))
       }
       expectEqual(Array(actual), expected.sorted())
     }
@@ -1200,6 +1218,7 @@ final class BitSetTest: CollectionTestCase {
         "a": BitSet(10*step ..< 20*step),
         "b": BitSet(10*step ..< 20*step).subtracting(13*step ..< 14*step),
         "c": BitSet(10*step ..< 20*step - 1),
+        "d": BitSet(10*step ..< 20*step).union(100*step ..< 110*step),
       ]
 
       let tests: [(range: Range<Int>, expected: Set<String>)] = [

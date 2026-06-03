@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -75,7 +77,7 @@ final class BitSetCountedTests: CollectionTestCase {
     func check<S: Sequence>(
       _ expected: S,
       _ body: (inout BitSet.Counted) -> Void,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) where S.Element == Int {
       var a: BitSet.Counted = [1, 2, 3, 4]
@@ -96,7 +98,7 @@ final class BitSetCountedTests: CollectionTestCase {
     func check<S: Sequence>(
       _ expected: S,
       _ body: (inout BitSet.Counted) -> Void,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) where S.Element == Int {
       var a: BitSet.Counted = [1, 2, 3, 4]
@@ -117,7 +119,7 @@ final class BitSetCountedTests: CollectionTestCase {
     func check<S: Sequence>(
       _ expected: S,
       _ body: (inout BitSet.Counted) -> Void,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) where S.Element == Int {
       var a: BitSet.Counted = [1, 2, 3, 4]
@@ -138,7 +140,7 @@ final class BitSetCountedTests: CollectionTestCase {
     func check<S: Sequence>(
       _ expected: S,
       _ body: (inout BitSet.Counted) -> Void,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) where S.Element == Int {
       var a: BitSet.Counted = [1, 2, 3, 4]

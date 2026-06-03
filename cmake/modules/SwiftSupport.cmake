@@ -1,78 +1,66 @@
-#[[
-This source file is part of the Swift Collections Open Source Project
+##===----------------------------------------------------------------------===##
+##
+## This source file is part of the Swift Collections open source project
+##
+## Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
+## Licensed under Apache License v2.0 with Runtime Library Exception
+##
+## See https://swift.org/LICENSE.txt for license information
+##
+## SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+##
+##===----------------------------------------------------------------------===##
 
-Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
-Licensed under Apache License v2.0 with Runtime Library Exception
 
-See https://swift.org/LICENSE.txt for license information
-#]]
+if(NOT COLLECTIONS_MODULE_TRIPLE OR NOT COLLECTIONS_ARCH OR NOT COLLECTIONS_PLATFORM)
+  # Get the target information from the Swift compiler.
+  set(module_triple_command "${CMAKE_Swift_COMPILER}" -print-target-info)
+  if(CMAKE_Swift_COMPILER_TARGET)
+    list(APPEND module_triple_command -target ${CMAKE_Swift_COMPILER_TARGET})
+  endif()
+  execute_process(COMMAND ${module_triple_command} OUTPUT_VARIABLE target_info_json)
+endif()
 
-# Returns the architecture name in a variable
-#
-# Usage:
-#   get_swift_host_arch(result_var_name)
-#
-# Sets ${result_var_name} with the converted architecture name derived from
-# CMAKE_SYSTEM_PROCESSOR.
-function(get_swift_host_arch result_var_name)
-  if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-    set("${result_var_name}" "x86_64" PARENT_SCOPE)
-  elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "AArch64|aarch64|arm64|ARM64")
-    if(CMAKE_SYSTEM_NAME MATCHES Darwin)
-      set("${result_var_name}" "arm64" PARENT_SCOPE)
+if(NOT COLLECTIONS_MODULE_TRIPLE)
+  string(JSON module_triple GET "${target_info_json}" "target" "moduleTriple")
+  set(COLLECTIONS_MODULE_TRIPLE "${module_triple}" CACHE STRING "Triple used to install swiftmodule files")
+  mark_as_advanced(COLLECTIONS_MODULE_TRIPLE)
+  message(CONFIGURE_LOG "Swift module triple: ${module_triple}")
+endif()
+
+if(NOT COLLECTIONS_ARCH)
+  if(CMAKE_Swift_COMPILER_VERSION VERSION_EQUAL 0.0.0 OR CMAKE_Swift_COMPILER_VERSION VERSION_GREATER_EQUAL 6.2)
+    # For newer compilers, we can use the -print-target-info command to get the architecture.
+    string(JSON module_arch GET "${target_info_json}" "target" "arch")
+  else()
+    # For older compilers, extract the value from `COLLECTIONS_MODULE_TRIPLE`.
+    string(REGEX MATCH "^[^-]+" module_arch "${COLLECTIONS_MODULE_TRIPLE}")
+  endif()
+
+  set(COLLECTIONS_ARCH "${module_arch}" CACHE STRING "Arch folder name used to install libraries")
+  mark_as_advanced(COLLECTIONS_ARCH)
+  message(CONFIGURE_LOG "Swift arch: ${COLLECTIONS_ARCH}")
+endif()
+
+if(NOT COLLECTIONS_PLATFORM)
+  if(CMAKE_Swift_COMPILER_VERSION VERSION_EQUAL 0.0.0 OR CMAKE_Swift_COMPILER_VERSION VERSION_GREATER_EQUAL 6.2)
+    # For newer compilers, we can use the -print-target-info command to get the platform.
+    string(JSON swift_platform GET "${target_info_json}" "target" "platform")
+  else()
+    # For older compilers, compile the value from `CMAKE_SYSTEM_NAME`.
+    if(APPLE)
+      set(swift_platform macosx)
     else()
-      set("${result_var_name}" "aarch64" PARENT_SCOPE)
+      set(swift_platform "$<LOWER_CASE:${CMAKE_SYSTEM_NAME}>")
     endif()
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "ppc64")
-    set("${result_var_name}" "powerpc64" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "ppc64le")
-    set("${result_var_name}" "powerpc64le" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "s390x")
-    set("${result_var_name}" "s390x" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv6l")
-    set("${result_var_name}" "armv6" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
-    set("${result_var_name}" "armv7" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7-a")
-    set("${result_var_name}" "armv7" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "amd64")
-    set("${result_var_name}" "amd64" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
-    set("${result_var_name}" "x86_64" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "IA64")
-    set("${result_var_name}" "itanium" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86")
-    set("${result_var_name}" "i686" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
-    set("${result_var_name}" "i686" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "wasm32")
-    set("${result_var_name}" "wasm32" PARENT_SCOPE)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "wasm64")
-    set("${result_var_name}" "wasm64" PARENT_SCOPE)
-  else()
-    message(FATAL_ERROR "Unrecognized architecture on host system: ${CMAKE_SYSTEM_PROCESSOR}")
   endif()
-endfunction()
 
-# Returns the os name in a variable
-#
-# Usage:
-#   get_swift_host_os(result_var_name)
-#
-#
-# Sets ${result_var_name} with the converted OS name derived from
-# CMAKE_SYSTEM_NAME.
-function(get_swift_host_os result_var_name)
-  if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    set(${result_var_name} macosx PARENT_SCOPE)
-  else()
-    string(TOLOWER ${CMAKE_SYSTEM_NAME} cmake_system_name_lc)
-    set(${result_var_name} ${cmake_system_name_lc} PARENT_SCOPE)
-  endif()
-endfunction()
+  set(COLLECTIONS_PLATFORM "${swift_platform}" CACHE STRING "Platform folder name used to install libraries")
+  mark_as_advanced(COLLECTIONS_PLATFORM)
+  message(CONFIGURE_LOG "Swift platform: ${COLLECTIONS_PLATFORM}")
+endif()
 
 function(_install_target module)
-  get_swift_host_os(swift_os)
   get_target_property(type ${module} TYPE)
 
   if(type STREQUAL STATIC_LIBRARY)
@@ -82,23 +70,23 @@ function(_install_target module)
   endif()
 
   install(TARGETS ${module}
-    ARCHIVE DESTINATION lib/${swift}/${swift_os}
-    LIBRARY DESTINATION lib/${swift}/${swift_os}
+    ARCHIVE DESTINATION lib/${swift}/${COLLECTIONS_PLATFORM}$<$<BOOL:${COLLECTIONS_INSTALL_ARCH_SUBDIR}>:/${COLLECTIONS_ARCH}>
+    LIBRARY DESTINATION lib/${swift}/${COLLECTIONS_PLATFORM}$<$<BOOL:${COLLECTIONS_INSTALL_ARCH_SUBDIR}>:/${COLLECTIONS_ARCH}>
     RUNTIME DESTINATION bin)
   if(type STREQUAL EXECUTABLE)
     return()
   endif()
 
-  get_swift_host_arch(swift_arch)
   get_target_property(module_name ${module} Swift_MODULE_NAME)
   if(NOT module_name)
     set(module_name ${module})
   endif()
 
   install(FILES $<TARGET_PROPERTY:${module},Swift_MODULE_DIRECTORY>/${module_name}.swiftdoc
-    DESTINATION lib/${swift}/${swift_os}/${module_name}.swiftmodule
-    RENAME ${swift_arch}.swiftdoc)
+    DESTINATION lib/${swift}/${COLLECTIONS_PLATFORM}/${module_name}.swiftmodule
+    RENAME ${COLLECTIONS_MODULE_TRIPLE}.swiftdoc)
+
   install(FILES $<TARGET_PROPERTY:${module},Swift_MODULE_DIRECTORY>/${module_name}.swiftmodule
-    DESTINATION lib/${swift}/${swift_os}/${module_name}.swiftmodule
-    RENAME ${swift_arch}.swiftmodule)
+    DESTINATION lib/${swift}/${COLLECTIONS_PLATFORM}/${module_name}.swiftmodule
+    RENAME ${COLLECTIONS_MODULE_TRIPLE}.swiftmodule)
 endfunction()

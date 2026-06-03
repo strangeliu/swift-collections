@@ -2,12 +2,18 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
+
+#if !COLLECTIONS_SINGLE_MODULE
+import InternalCollectionsUtilities
+#endif
 
 extension BitSet: Sequence {
   /// The type representing the bit set's elements.
@@ -29,6 +35,16 @@ extension BitSet: Sequence {
   @inlinable
   public func makeIterator() -> Iterator {
     return Iterator(self)
+  }
+
+  /// Returns an iterator over the elements of the bit set, starting from the
+  /// given index.
+  ///
+  /// - Parameter index: A valid index of the collection.
+  /// - Complexity: O(1)
+  @inlinable
+  public func makeIterator(from index: Index) -> Iterator {
+    return Iterator(_bitset: self, from: index)
   }
 
   public func _customContainsEquatableElement(
@@ -53,6 +69,20 @@ extension BitSet: Sequence {
       self.word = bitset._read { handle in
         guard handle.wordCount > 0 else { return .empty }
         return handle._words[0]
+      }
+    }
+
+    @usableFromInline
+    internal init(_bitset: BitSet, from start: Index) {
+      self.bitset = _bitset
+      let (word, bit) = start._position.split
+      self.index = word
+      self.word = bitset._read { handle in
+        precondition(word <= handle.wordCount, "Invalid index")
+        guard word < handle.wordCount else { return .empty }
+        var w = handle._words[word]
+        w.removeAll(upTo: bit)
+        return w
       }
     }
 
@@ -116,7 +146,7 @@ extension BitSet: Collection, BidirectionalCollection {
     Index(_position: _read { $0.startIndex })
   }
 
-  /// The collection’s “past the end” position--that is, the position one step
+  /// The collection's "past the end" position--that is, the position one step
   /// after the last valid subscript argument.
   ///
   /// - Complexity: O(1)
@@ -206,9 +236,9 @@ extension BitSet: Collection, BidirectionalCollection {
   /// the collection.
   ///
   /// - Parameters:
-  ///   - i: A valid index of the collection.
-  ///   - distance: The distance to offset `i`.
-  /// - Returns: An index offset by `distance` from the index `i`. If
+  ///   - index: A valid index of the collection.
+  ///   - distance: The distance to offset `index`.
+  /// - Returns: An index offset by `distance` from `index`. If
   ///   `distance` is positive, this is the same value as the result of
   ///   `distance` calls to `index(after:)`. If `distance` is negative, this
   ///   is the same value as the result of `abs(distance)` calls to

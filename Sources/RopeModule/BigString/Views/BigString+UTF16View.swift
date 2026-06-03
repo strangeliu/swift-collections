@@ -2,16 +2,18 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   public struct UTF16View: Sendable {
     var _base: BigString
@@ -32,7 +34,7 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.UTF16View: Equatable {
   public static func ==(left: Self, right: Self) -> Bool {
     BigString.utf8IsEqual(left._base, to: right._base)
@@ -43,14 +45,14 @@ extension BigString.UTF16View: Equatable {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.UTF16View: Hashable {
   public func hash(into hasher: inout Hasher) {
     _base.hashUTF8(into: &hasher)
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.UTF16View: Sequence {
   public typealias Element = UInt16
 
@@ -69,7 +71,7 @@ extension BigString.UTF16View: Sequence {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.UTF16View.Iterator: IteratorProtocol {
   public typealias Element = UInt16
 
@@ -78,22 +80,22 @@ extension BigString.UTF16View.Iterator: IteratorProtocol {
     let ri = _index._rope!
     var ci = _index._chunkIndex
     let chunk = _base._rope[ri]
-    let result = chunk.string.utf16[ci]
+    let result = chunk[utf16: ci]
 
-    chunk.string.utf16.formIndex(after: &ci)
-    if ci < chunk.string.endIndex {
+    ci = chunk.utf16Index(after: ci)
+    if ci < chunk.endIndex {
       _index = BigString.Index(baseUTF8Offset: _index._utf8BaseOffset, _rope: ri, chunk: ci)
     } else {
       _index = BigString.Index(
         baseUTF8Offset: _index._utf8BaseOffset + chunk.utf8Count,
         _rope: _base._rope.index(after: ri),
-        chunk: String.Index(_utf8Offset: 0))
+        chunk: BigString._Chunk.Index(utf8Offset: 0))
     }
     return result
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.UTF16View: BidirectionalCollection {
   public typealias Index = BigString.Index
   public typealias SubSequence = BigSubstring.UTF16View
@@ -138,7 +140,7 @@ extension BigString.UTF16View: BidirectionalCollection {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.UTF16View {
   public func index(roundingDown i: Index) -> Index {
     _base._utf16Index(roundingDown: i)
@@ -149,4 +151,4 @@ extension BigString.UTF16View {
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

@@ -1,35 +1,44 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift.org open source project
+// This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2014 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
-// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
 struct _MinimalCollectionCore<Element> {
   var state: _CollectionState
   var elements: [Element]
+  let isContiguous: Bool
   var underestimatedCount: Int
 
   public init<S: Sequence>(
     context: TestContext,
     elements: S,
+    isContiguous: Bool,
     underestimatedCount: UnderestimatedCountBehavior? = nil
   ) where S.Element == Element {
-    self.init(context: context, elements: Array(elements), underestimatedCount: underestimatedCount)
+    self.init(
+      context: context,
+      elements: Array(elements),
+      isContiguous: isContiguous,
+      underestimatedCount: underestimatedCount)
   }
 
   public init(
     context: TestContext,
     elements: [Element],
+    isContiguous: Bool,
     underestimatedCount: UnderestimatedCountBehavior? = nil
   ) {
     self.state = _CollectionState(context: context, parent: nil, count: elements.count)
     self.elements = elements
+    self.isContiguous = isContiguous
     self.underestimatedCount = underestimatedCount?.value(forCount: elements.count) ?? elements.count
   }
 
@@ -76,7 +85,7 @@ extension _MinimalCollectionCore {
   func assertValidIndex(
     _ index: MinimalIndex,
     _ message: @autoclosure () -> String = "Invalid index",
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     expectTrue(isValidIndex(index),
@@ -87,7 +96,7 @@ extension _MinimalCollectionCore {
   func assertValidIndexBeforeEnd(
     _ index: MinimalIndex,
     _ message: @autoclosure () -> String = "Invalid index",
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     expectTrue(isValidIndex(index),
@@ -116,7 +125,7 @@ extension _MinimalCollectionCore {
   func index(after index: MinimalIndex) -> MinimalIndex {
     assertValidIndex(index)
     expectTrue(index._offset < count,
-               "Can't advance beyond endIndex",
+               "Cannot advance beyond endIndex",
                trapping: true)
     return self.index(at: index._offset + 1)
   }
@@ -124,7 +133,7 @@ extension _MinimalCollectionCore {
   func index(before index: MinimalIndex) -> MinimalIndex {
     assertValidIndex(index)
     expectTrue(index._offset > 0,
-               "Can't advance before startIndex",
+               "Cannot advance before startIndex",
                trapping: true)
     return self.index(at: index._offset - 1)
   }
@@ -132,7 +141,7 @@ extension _MinimalCollectionCore {
   func formIndex(after index: inout MinimalIndex) {
     assertValidIndex(index)
     expectTrue(index._offset < count,
-               "Can't advance beyond endIndex",
+               "Cannot advance beyond endIndex",
                trapping: true)
     index._offset += 1
   }
@@ -140,7 +149,7 @@ extension _MinimalCollectionCore {
   func formIndex(before index: inout MinimalIndex) {
     assertValidIndex(index)
     expectTrue(index._offset > 0,
-               "Can't advance before startIndex",
+               "Cannot advance before startIndex",
                trapping: true)
     index._offset -= 1
   }
@@ -157,10 +166,10 @@ extension _MinimalCollectionCore {
   ) -> MinimalIndex {
     assertValidIndex(index)
     expectTrue(index._offset + n >= 0,
-               "Can't advance before startIndex",
+               "Cannot advance before startIndex",
                trapping: true)
     expectTrue(index._offset + n <= count,
-               "Can't advance after endIndex",
+               "Cannot advance after endIndex",
                trapping: true)
     return self.index(at: index._offset + n)
   }
@@ -283,7 +292,7 @@ extension _MinimalCollectionCore {
   mutating func removeFirst() -> Element {
     expectTrue(
       count > 0,
-      "Can't remove first element of an empty collection",
+      "Cannot remove first element of an empty collection",
       trapping: true)
     ensureUniqueState()
     state.remove(count: 1, at: 0)
@@ -293,11 +302,11 @@ extension _MinimalCollectionCore {
   mutating func removeFirst(_ n: Int) {
     expectTrue(
       n >= 0,
-      "Can't remove a negative number of elements",
+      "Cannot remove a negative number of elements",
       trapping: true)
     expectTrue(
       n <= count,
-      "Can't remove more elements than there are in the collection",
+      "Cannot remove more elements than there are in the collection",
       trapping: true)
     ensureUniqueState()
     state.remove(count: n, at: 0)
@@ -307,7 +316,7 @@ extension _MinimalCollectionCore {
   public mutating func _customRemoveLast() -> Element? {
     expectTrue(
       !isEmpty,
-      "Can't remove last element of an empty collection",
+      "Cannot remove last element of an empty collection",
       trapping: true)
     ensureUniqueState()
     state.remove(count: 1, at: state.count)
@@ -317,11 +326,11 @@ extension _MinimalCollectionCore {
   public mutating func _customRemoveLast(_ n: Int) -> Bool {
     expectTrue(
       n >= 0,
-      "Can't remove a negative number of elements",
+      "Cannot remove a negative number of elements",
       trapping: true)
     expectTrue(
       count >= n,
-      "Can't remove more elements than there are in the collection",
+      "Cannot remove more elements than there are in the collection",
       trapping: true)
     elements.removeLast(n)
     ensureUniqueState()
@@ -346,4 +355,3 @@ extension _MinimalCollectionCore {
     try elements.removeAll(where: shouldBeRemoved)
   }
 }
-

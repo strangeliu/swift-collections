@@ -1,10 +1,12 @@
 #[[
 This source file is part of the Swift Collections Open Source Project
 
-Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 Licensed under Apache License v2.0 with Runtime Library Exception
 
 See https://swift.org/LICENSE.txt for license information
+
+SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 #]]
 
 if(COLLECTIONS_SINGLE_MODULE)
@@ -23,6 +25,7 @@ else()
 endif()
 
 target_sources(${module_name} PRIVATE
+  "BitArray/BinaryInteger extensions.swift"
   "BitArray/BitArray+BitwiseOperations.swift"
   "BitArray/BitArray+ChunkedBitsIterators.swift"
   "BitArray/BitArray+Codable.swift"
@@ -32,11 +35,13 @@ target_sources(${module_name} PRIVATE
   "BitArray/BitArray+Descriptions.swift"
   "BitArray/BitArray+Equatable.swift"
   "BitArray/BitArray+ExpressibleByArrayLiteral.swift"
+  "BitArray/BitArray+ExpressibleByStringLiteral.swift"
   "BitArray/BitArray+Extras.swift"
   "BitArray/BitArray+Fill.swift"
   "BitArray/BitArray+Hashable.swift"
   "BitArray/BitArray+Initializers.swift"
   "BitArray/BitArray+Invariants.swift"
+  "BitArray/BitArray+LosslessStringConvertible.swift"
   "BitArray/BitArray+RandomBits.swift"
   "BitArray/BitArray+RangeReplaceableCollection.swift"
   "BitArray/BitArray+Testing.swift"

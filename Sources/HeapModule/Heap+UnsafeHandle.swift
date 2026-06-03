@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -74,6 +76,7 @@ extension Heap._UnsafeHandle {
   /// Swaps the element at the given node with the supplied value.
   @inlinable @inline(__always)
   internal func swapAt(_ i: _HeapNode, with value: inout Element) {
+    assert(i.offset < count)
     let p = buffer.baseAddress.unsafelyUnwrapped + i.offset
     swap(&p.pointee, &value)
   }
@@ -81,12 +84,17 @@ extension Heap._UnsafeHandle {
 
   @inlinable @inline(__always)
   internal func minValue(_ a: _HeapNode, _ b: _HeapNode) -> _HeapNode {
-    self[a] < self[b] ? a : b
+    // The expression used here matches the implementation of the
+    // standard `Swift.min(_:_:)` function. This attempts to
+    // preserve any pre-existing order in case `T` has identity.
+    // `(min(x, y), max(x, y))` should return `(x, y)` in case `x == y`.
+    self[b] < self[a] ? b : a
   }
 
   @inlinable @inline(__always)
   internal func maxValue(_ a: _HeapNode, _ b: _HeapNode) -> _HeapNode {
-    self[a] < self[b] ? b : a
+    //  In case `a` and `b` match, we need to pick `b`. See `minValue(_:_:)`.
+    self[b] >= self[a] ? b : a
   }
 }
 

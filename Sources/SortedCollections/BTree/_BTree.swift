@@ -2,12 +2,16 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
+
+#if UnstableSortedCollections
 
 /// A bidirectional collection representing a BTree which efficiently stores its
 /// elements in sorted order and maintains roughly `O(log count)`
@@ -27,7 +31,7 @@ internal struct _BTree<Key: Comparable, Value> {
     return 4
     #else
     let capacityInBytes = 128
-    return Swift.min(16, capacityInBytes / MemoryLayout<Key>.stride)
+    return Swift.max(16, capacityInBytes / MemoryLayout<Key>.stride)
     #endif
   }
   
@@ -39,7 +43,7 @@ internal struct _BTree<Key: Comparable, Value> {
     return 5
     #else
     let capacityInBytes = 2000
-    return Swift.min(16, capacityInBytes / MemoryLayout<Key>.stride)
+    return Swift.max(16, capacityInBytes / MemoryLayout<Key>.stride)
     #endif
   }
   
@@ -344,6 +348,12 @@ extension _BTree {
           offset += keySlot
           
           if keySlot < handle.elementCount && handle[keyAt: keySlot] == key {
+            if !handle.isLeaf {
+              for i in 0...keySlot {
+                offset += handle[childAt: i].storage.header.subtreeCount
+              }
+            }
+            
             return Index(
               node: .passUnretained(storage),
               slot: keySlot,
@@ -457,34 +467,40 @@ extension _BTree {
     func search(in node: Node) -> Unmanaged<Node.Storage>? {
       node.read({ handle in
         let slot = handle.startSlot(forKey: key)
-        if slot < handle.elementCount {
-          if handle.isLeaf {
+
+        if handle.isLeaf {
+          if slot < handle.elementCount {
             offset += slot
             targetSlot = slot
             return .passUnretained(node.storage)
-          } else {
-            // Calculate offset by summing previous subtrees
-            for i in 0...slot {
-              offset += handle[childAt: i].read({ $0.subtreeCount })
-            }
-            
-            let currentOffset = offset
-            let currentDepth = childSlots.depth
-            childSlots.append(UInt16(slot))
-            
-            if let foundEarlier = search(in: handle[childAt: slot]) {
-              return foundEarlier
-            } else {
-              childSlots.depth = currentDepth
-              targetSlot = slot
-              offset = currentOffset
-              
-              return .passUnretained(node.storage)
-            }
           }
-        } else {
-          // Start index exceeds node and is therefore not in this.
           return nil
+        }
+
+        // Internal node: advance offset to the start of child[slot].
+        // child[slot] starts after `slot` elements and `slot` preceding subtrees.
+        offset += slot
+        for i in 0..<slot {
+          offset += handle[childAt: i].read({ $0.subtreeCount })
+        }
+
+        if slot < handle.elementCount {
+          // elem[slot] >= key. Try child[slot] for an earlier occurrence first.
+          let elemOffset = offset + handle[childAt: slot].read({ $0.subtreeCount })
+          let savedDepth = childSlots.depth
+          childSlots.append(UInt16(slot))
+
+          if let foundEarlier = search(in: handle[childAt: slot]) {
+            return foundEarlier
+          }
+          childSlots.depth = savedDepth
+          targetSlot = slot
+          offset = elemOffset
+          return .passUnretained(node.storage)
+        } else {
+          // key > all elements here: descend into the rightmost child.
+          childSlots.append(UInt16(slot))
+          return search(in: handle[childAt: slot])
         }
       })
     }
@@ -512,35 +528,42 @@ extension _BTree {
     func search(in node: Node) -> Unmanaged<Node.Storage>? {
       node.read({ handle in
         let slot = handle.endSlot(forKey: key) - 1
-        if slot > 0 {
-          assert(slot < handle.elementCount, "Slot out of bounds")
-          
-          if handle.isLeaf {
+
+        if handle.isLeaf {
+          if slot >= 0 {
             offset += slot
             targetSlot = slot
             return .passUnretained(node.storage)
-          } else {
-            for i in 0...slot {
-              offset += handle[childAt: i].read({ $0.subtreeCount })
-            }
-            
-            let currentOffset = offset
-            let currentDepth = childSlots.depth
-            childSlots.append(UInt16(slot + 1))
-            
-            if let foundLater = search(in: handle[childAt: slot + 1]) {
-              return foundLater
-            } else {
-              childSlots.depth = currentDepth
-              targetSlot = slot
-              offset = currentOffset
-              
-              return .passUnretained(node.storage)
-            }
           }
-        } else {
-          // Start index exceeds node and is therefore not in this.
           return nil
+        }
+
+        if slot >= 0 {
+          // elem[slot] <= key. Also check child[slot+1] for a greater
+          // element still <= key.
+          offset += slot
+          for i in 0..<slot {
+            offset += handle[childAt: i].read({ $0.subtreeCount })
+          }
+          offset += handle[childAt: slot].read({ $0.subtreeCount })
+          // offset = position of elem[slot]
+
+          let elemOffset = offset
+          let savedDepth = childSlots.depth
+          childSlots.append(UInt16(slot + 1))
+          offset += 1  // step past elem[slot] to the start of child[slot+1]
+
+          if let foundLater = search(in: handle[childAt: slot + 1]) {
+            return foundLater
+          }
+          childSlots.depth = savedDepth
+          targetSlot = slot
+          offset = elemOffset
+          return .passUnretained(node.storage)
+        } else {
+          // key < all elements here: descend into the leftmost child.
+          childSlots.append(UInt16(0))
+          return search(in: handle[childAt: 0])
         }
       })
     }
@@ -575,3 +598,5 @@ extension _BTree {
     return _BTree<Key, T>(rootedAt: root, internalCapacity: internalCapacity)
   }
 }
+
+#endif

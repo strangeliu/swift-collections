@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -14,7 +16,7 @@
 @usableFromInline
 @frozen
 internal struct _HashStack<Element> {
-#if arch(x86_64) || arch(arm64)
+#if _pointerBitWidth(_64)
   @inlinable
   @inline(__always)
   internal static var capacity: Int { 13 }
@@ -27,7 +29,7 @@ internal struct _HashStack<Element> {
     Element, Element, Element, Element,
     Element
   )
-#else
+#elseif _pointerBitWidth(_32)
   @inlinable
   @inline(__always)
   internal static var capacity: Int { 7 }
@@ -38,6 +40,8 @@ internal struct _HashStack<Element> {
     Element, Element, Element, Element,
     Element, Element, Element
   )
+#else
+#error("Unexpected pointer bit width")
 #endif
 
   @usableFromInline
@@ -46,18 +50,20 @@ internal struct _HashStack<Element> {
   @inlinable
   internal init(filledWith value: Element) {
     assert(Self.capacity == _HashLevel.limit)
-#if arch(x86_64) || arch(arm64)
+#if _pointerBitWidth(_64)
     _contents = (
       value, value, value, value,
       value, value, value, value,
       value, value, value, value,
       value
     )
-#else
+#elseif _pointerBitWidth(_32)
     _contents = (
       value, value, value, value,
       value, value, value
     )
+#else
+#error("Unexpected pointer bit width")
 #endif
     self._count = 0
   }

@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -15,7 +17,7 @@ extension OrderedSet {
   /// testing and the member uniqueness guarantees of `OrderedSet`.
   ///
   /// - Complexity: O(`self.count + other.count`)
-  @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+  @available(SwiftStdlib 5.1, *)
   public func difference(
     from other: Self
   ) -> CollectionDifference<Element> {
@@ -91,7 +93,7 @@ extension OrderedSet {
   ///
   /// - Complexity: O(*n* + *c*), where *n* is `self.count` and *c*
   ///   is the number of changes contained by the parameter.
-  @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+  @available(SwiftStdlib 5.1, *)
   public func applying(_ difference: CollectionDifference<Element>) -> Self? {
     guard let array = self.elements.applying(difference) else { return nil }
     let result = OrderedSet(array)

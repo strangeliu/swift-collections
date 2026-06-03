@@ -2,12 +2,16 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
+
+#if UnstableSortedCollections
 
 extension _BTree {
   /// A mutable cursor to an element of the B-Tree represented as a path.
@@ -351,8 +355,12 @@ extension _BTree {
         }
         
         if depth == 0 && newNode.read({ $0.elementCount == 0 && !$0.isLeaf }) {
-          // If the root has no elements, we won't
-          newNode.update(isUnique: true) { $0.drop() }
+          // If the root has no elements, we drop it and promote the child.
+          node = newNode.update(isUnique: true) { handle in
+            let newRoot = handle.moveChild(atSlot: 0)
+            handle.drop()
+            return newRoot
+          }
         } else {
           node = newNode
         }
@@ -502,3 +510,5 @@ extension _BTree {
     return (cursor, found)
   }
 }
+
+#endif

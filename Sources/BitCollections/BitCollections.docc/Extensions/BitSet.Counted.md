@@ -14,10 +14,10 @@
 
 - ``init()``
 - ``init(reservingCapacity:)``
-- ``init(_:)-15cws``
-- ``init(_:)-38hho``
-- ``init(_:)-2of3i``
-- ``init(_:)-5fhls``
+- ``init(_:)-(BitSet)``
+- ``init(_:)-(BitArray)``
+- ``init(_:)-(Range<Int>)``
+- ``init(_:)-(Sequence<Int>)``
 - ``init(bitPattern:)``
 - ``init(words:)``
 - ``random(upTo:)``
@@ -43,83 +43,83 @@
 ### Sorted Set Operations
 
 - ``subscript(member:)``
-- ``subscript(members:)-5nkxk``
-- ``subscript(members:)-5xfq5``
+- ``subscript(members:)-(Range<Int>)``
+- ``subscript(members:)-(RangeExpression<Int>)``
 - ``min()``
 - ``max()``
 - ``sorted()``
 
 ### Binary Set Operations
 
-- ``intersection(_:)-1wfb5``
-- ``intersection(_:)-4evdp``
-- ``intersection(_:)-9rtcc``
-- ``intersection(_:)-13us``
+- ``intersection(_:)-(BitSet.Counted)``
+- ``intersection(_:)-(BitSet)``
+- ``intersection(_:)-(Range<Int>)``
+- ``intersection(_:)-(Sequence<Int>)``
 
-- ``union(_:)-2okwt``
-- ``union(_:)-pwqf``
-- ``union(_:)-18u31``
-- ``union(_:)-8ysz9``
+- ``union(_:)-(BitSet.Counted)``
+- ``union(_:)-(BitSet)``
+- ``union(_:)-(Range<Int>)``
+- ``union(_:)-(Sequence<Int>)``
 
-- ``subtracting(_:)-7u4tf``
-- ``subtracting(_:)-5vgml``
-- ``subtracting(_:)-6scy1``
-- ``subtracting(_:)-82loi``
+- ``subtracting(_:)-(BitSet.Counted)``
+- ``subtracting(_:)-(BitSet)``
+- ``subtracting(_:)-(Range<Int>)``
+- ``subtracting(_:)-(Sequence<Int>)``
 
-- ``symmetricDifference(_:)-84e40``
-- ``symmetricDifference(_:)-3suo3``
-- ``symmetricDifference(_:)-7zx5q``
-- ``symmetricDifference(_:)-46ni1``
+- ``symmetricDifference(_:)-(BitSet.Counted)``
+- ``symmetricDifference(_:)-(BitSet)``
+- ``symmetricDifference(_:)-(Range<Int>)``
+- ``symmetricDifference(_:)-(Sequence<Int>)``
 
-- ``formIntersection(_:)-49and``
-- ``formIntersection(_:)-49a0x``
-- ``formIntersection(_:)-79anv``
-- ``formIntersection(_:)-3zoc4``
+- ``formIntersection(_:)-(BitSet.Counted)``
+- ``formIntersection(_:)-(BitSet)``
+- ``formIntersection(_:)-(Range<Int>)``
+- ``formIntersection(_:)-(Sequence<Int>)``
 
-- ``formUnion(_:)-c6a3``
-- ``formUnion(_:)-c5kv``
-- ``formUnion(_:)-2f05x``
-- ``formUnion(_:)-8kilf``
+- ``formUnion(_:)-(BitSet.Counted)``
+- ``formUnion(_:)-(BitSet)``
+- ``formUnion(_:)-(Range<Int>)``
+- ``formUnion(_:)-(Sequence<Int>)``
 
-- ``subtract(_:)-2hzty``
-- ``subtract(_:)-2i1qq``
-- ``subtract(_:)-32jtb``
-- ``subtract(_:)-75xgt``
+- ``subtract(_:)-(BitSet.Counted)``
+- ``subtract(_:)-(BitSet)``
+- ``subtract(_:)-(Range<Int>)``
+- ``subtract(_:)-(Sequence<Int>)``
 
-- ``formSymmetricDifference(_:)-6vskl``
-- ``formSymmetricDifference(_:)-6vs05``
-- ``formSymmetricDifference(_:)-d2kd``
-- ``formSymmetricDifference(_:)-54ghn``
+- ``formSymmetricDifference(_:)-(BitSet.Counted)``
+- ``formSymmetricDifference(_:)-(BitSet)``
+- ``formSymmetricDifference(_:)-(Range<Int>)``
+- ``formSymmetricDifference(_:)-(Sequence<Int>)``
 
 ### Binary Set Predicates
 
 - ``==(_:_:)``
-- ``isEqualSet(to:)-11031``
-- ``isEqualSet(to:)-1hvpp``
-- ``isEqualSet(to:)-1mvpq``
-- ``isEqualSet(to:)-878x1``
+- ``isEqualSet(to:)-(BitSet.Counted)``
+- ``isEqualSet(to:)-(BitSet)``
+- ``isEqualSet(to:)-(Range<Int>)``
+- ``isEqualSet(to:)-(Sequence<Int>)``
 
-- ``isSubset(of:)-8iy8c``
-- ``isSubset(of:)-1r41b``
-- ``isSubset(of:)-1dz0p``
-- ``isSubset(of:)-3bq5m``
+- ``isSubset(of:)-(BitSet.Counted)``
+- ``isSubset(of:)-(BitSet)``
+- ``isSubset(of:)-(Range<Int>)``
+- ``isSubset(of:)-(Sequence<Int>)``
 
-- ``isSuperset(of:)-48i5c``
-- ``isSuperset(of:)-10gu8``
-- ``isSuperset(of:)-8b7lq``
-- ``isSuperset(of:)-6slai``
+- ``isSuperset(of:)-(BitSet.Counted)``
+- ``isSuperset(of:)-(BitSet)``
+- ``isSuperset(of:)-(Range<Int>)``
+- ``isSuperset(of:)-(Sequence<Int>)``
 
-- ``isStrictSubset(of:)-5ry1b``
-- ``isStrictSubset(of:)-2ndu3``
-- ``isStrictSubset(of:)-9iul0``
-- ``isStrictSubset(of:)-2pq1j``
+- ``isStrictSubset(of:)-(BitSet.Counted)``
+- ``isStrictSubset(of:)-(BitSet)``
+- ``isStrictSubset(of:)-(Range<Int>)``
+- ``isStrictSubset(of:)-(Sequence<Int>)``
 
-- ``isStrictSuperset(of:)-9mgmd``
-- ``isStrictSuperset(of:)-6hw4t``
-- ``isStrictSuperset(of:)-1ya0j``
-- ``isStrictSuperset(of:)-4qt1e``
+- ``isStrictSuperset(of:)-(BitSet.Counted)``
+- ``isStrictSuperset(of:)-(BitSet)``
+- ``isStrictSuperset(of:)-(Range<Int>)``
+- ``isStrictSuperset(of:)-(Sequence<Int>)``
 
-- ``isDisjoint(with:)-9wyku``
-- ``isDisjoint(with:)-5fww0``
-- ``isDisjoint(with:)-6p0t7``
-- ``isDisjoint(with:)-eujj``
+- ``isDisjoint(with:)-(BitSet.Counted)``
+- ``isDisjoint(with:)-(BitSet)``
+- ``isDisjoint(with:)-(Range<Int>)``
+- ``isDisjoint(with:)-(Sequence<Int>)``

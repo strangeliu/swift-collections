@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -85,6 +87,7 @@ extension TreeSet.Index: Hashable {
   }
 }
 
+#if !$Embedded
 extension TreeSet.Index: CustomStringConvertible {
   // A textual representation of this instance.
   public var description: String {
@@ -98,6 +101,7 @@ extension TreeSet.Index: CustomDebugStringConvertible {
     description
   }
 }
+#endif
 
 extension TreeSet: Collection {
   /// A Boolean value indicating whether the collection is empty.
@@ -126,7 +130,7 @@ extension TreeSet: Collection {
     return Index(_root: _root.unmanaged, version: _version, path: path)
   }
 
-  /// The collection’s “past the end” position—that is, the position one greater
+  /// The collection's "past the end" position—that is, the position one greater
   /// than the last valid subscript argument.
   ///
   /// - Complexity: O(1)
@@ -157,7 +161,7 @@ extension TreeSet: Collection {
   @inlinable
   public subscript(position: Index) -> Element {
     precondition(_isValid(position), "Invalid index")
-    precondition(position._path.isOnItem, "Can't get element at endIndex")
+    precondition(position._path.isOnItem, "Cannot get element at endIndex")
     return _UnsafeHandle.read(position._path.node) {
       $0[item: position._path.currentItemSlot].key
     }

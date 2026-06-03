@@ -2,16 +2,18 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   mutating func _append(contentsOf other: __owned Substring) {
     if other.isEmpty { return }
@@ -20,14 +22,14 @@ extension BigString {
       return
     }
     var ingester = _ingester(forInserting: other, at: endIndex, allowForwardPeek: true)
-    
+
     let last = _rope.index(before: _rope.endIndex)
     if let final = _rope[last].append(from: &ingester) {
       precondition(!final.isUndersized)
       _rope.append(final)
       return
     }
-    
+
     // Make a temp rope out of the rest of the chunks and then join the two trees together.
     if !ingester.isAtEnd {
       var builder = _Rope.Builder()
@@ -41,11 +43,11 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   var _firstUnicodeScalar: Unicode.Scalar {
     assert(!isEmpty)
-    return _rope.root.firstItem.value.string.unicodeScalars.first!
+    return _rope.root.firstItem.value.firstScalar
   }
 
   mutating func _append(contentsOf other: __owned BigString) {
@@ -56,7 +58,7 @@ extension BigString {
     }
 
     let hint = other._firstUnicodeScalar
-    var other = other._rope    
+    var other = other._rope
     var old = _CharacterRecognizer()
     var new = self._breakState(upTo: endIndex, nextScalarHint: hint)
     _ = other.resyncBreaks(old: &old, new: &new)
@@ -106,14 +108,14 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   var isUndersized: Bool {
     _utf8Count < _Chunk.minUTF8Count
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   /// Note: This assumes `other` already has the correct break positions.
   mutating func _append(_ other: __owned _Chunk) {
@@ -133,7 +135,7 @@ extension BigString {
       self._rope.append(other)
     }
   }
-  
+
   /// Note: This assumes `self` and `other` already have the correct break positions.
   mutating func _prepend(_ other: __owned _Chunk) {
     assert(!other.isEmpty)
@@ -151,7 +153,7 @@ extension BigString {
       self._rope.prepend(other)
     }
   }
-  
+
   /// Note: This assumes `other` already has the correct break positions.
   mutating func _append(_ other: __owned _Rope) {
     guard !other.isEmpty else { return }
@@ -172,7 +174,7 @@ extension BigString {
     }
     self._rope = _Rope.join(self._rope, other)
   }
-  
+
   /// Note: This assumes `self` and `other` already have the correct break positions.
   mutating func _prepend(_ other: __owned _Rope) {
     guard !other.isEmpty else { return }
@@ -195,4 +197,4 @@ extension BigString {
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

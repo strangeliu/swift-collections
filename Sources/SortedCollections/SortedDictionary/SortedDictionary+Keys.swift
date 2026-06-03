@@ -2,12 +2,16 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
+
+#if UnstableSortedCollections
 
 extension SortedDictionary {
   /// A view of an sorted dictionary's Keys as a standalone collection.
@@ -23,10 +27,8 @@ extension SortedDictionary {
   }
 }
 
-#if swift(>=5.5)
 extension SortedDictionary.Keys: Sendable
 where Key: Sendable, Value: Sendable {}
-#endif
 
 extension SortedDictionary.Keys: Sequence {
   /// The element type of the collection.
@@ -57,10 +59,8 @@ extension SortedDictionary.Keys: Sequence {
   }
 }
 
-#if swift(>=5.5)
 extension SortedDictionary.Keys.Iterator: Sendable
 where Key: Sendable, Value: Sendable {}
-#endif
 
 extension SortedDictionary.Keys: BidirectionalCollection {
   /// The index type for a dictionary's keys view.
@@ -261,3 +261,5 @@ extension SortedDictionary.Keys: Hashable where Key: Hashable {
     }
   }
 }
+
+#endif

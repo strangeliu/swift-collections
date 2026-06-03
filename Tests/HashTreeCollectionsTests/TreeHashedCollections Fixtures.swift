@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -30,6 +32,7 @@ let testItems: [RawCollider] = {
     RawCollider(5, "ACAD"),
     RawCollider(6, "ACAD"),
   ]
+#if COLLECTIONS_LONG_TESTS
   if MemoryLayout<Int>.size == 8 {
     // Cut testing workload down a bit on 32-bit systems. In practice a 32-bit Int
     // usually means we're running on a watchOS device (arm64_32), and those are relatively slow
@@ -47,6 +50,7 @@ let testItems: [RawCollider] = {
     RawCollider(12, "ACC"),
   ]
   #endif
+#endif
   return testItems
 }()
 
@@ -130,11 +134,13 @@ let fixtures: [Fixture] = {
 
     func isAllowed() -> Bool {
       let reject: FixtureFlavor
-#if arch(i386) || arch(arm64_32)
+#if _pointerBitWidth(_32)
       reject = .large
-#else
+#elseif _pointerBitWidth(_64)
       precondition(MemoryLayout<Int>.size == 8, "Unknown platform")
       reject = .small
+#else
+#error("Unexpected pointer bit width")
 #endif
       return self != reject
     }

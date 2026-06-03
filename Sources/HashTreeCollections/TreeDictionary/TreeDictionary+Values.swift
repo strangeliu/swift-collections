@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -14,7 +16,7 @@ import InternalCollectionsUtilities
 #endif
 
 extension TreeDictionary {
-  /// A view of a dictionary’s values.
+  /// A view of a dictionary's values.
   @frozen
   public struct Values {
     @usableFromInline
@@ -46,6 +48,7 @@ extension TreeDictionary {
 extension TreeDictionary.Values: Sendable
 where Key: Sendable, Value: Sendable {}
 
+#if !$Embedded
 extension TreeDictionary.Values: CustomStringConvertible {
   // A textual representation of this instance.
   public var description: String {
@@ -59,6 +62,7 @@ extension TreeDictionary.Values: CustomDebugStringConvertible {
     description
   }
 }
+#endif
 
 extension TreeDictionary.Values: Sequence {
   public typealias Element = Value

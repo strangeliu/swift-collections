@@ -2,16 +2,18 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring {
   public struct UTF8View: Sendable {
     internal var _base: BigString
@@ -39,7 +41,7 @@ extension BigSubstring {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   public init?(_ utf8: BigSubstring.UTF8View) {
     guard
@@ -52,12 +54,12 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring.UTF8View {
   public var base: BigString.UTF8View { _base.utf8 }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring.UTF8View: Equatable {
   public static func ==(left: Self, right: Self) -> Bool {
     BigString.utf8IsEqual(left._base, in: left._bounds, to: right._base, in: right._bounds)
@@ -69,14 +71,14 @@ extension BigSubstring.UTF8View: Equatable {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring.UTF8View: Hashable {
   public func hash(into hasher: inout Hasher) {
     _base.hashUTF8(into: &hasher, from: _bounds.lowerBound, to: _bounds.upperBound)
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring.UTF8View: Sequence {
   public typealias Element = UInt8
 
@@ -100,7 +102,7 @@ extension BigSubstring.UTF8View: Sequence {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring.UTF8View: BidirectionalCollection {
   public typealias Index = BigString.Index
   public typealias SubSequence = Self
@@ -117,13 +119,13 @@ extension BigSubstring.UTF8View: BidirectionalCollection {
 
   @inline(__always)
   public func index(after i: Index) -> Index {
-    precondition(i < endIndex, "Can't advance above end index")
+    precondition(i < endIndex, "Cannot advance above end index")
     return _base._utf8Index(after: i)
   }
 
   @inline(__always)
   public func index(before i: Index) -> Index {
-    precondition(i > startIndex, "Can't advance below start index")
+    precondition(i > startIndex, "Cannot advance below start index")
     return _base._utf8Index(before: i)
   }
 
@@ -161,7 +163,7 @@ extension BigSubstring.UTF8View: BidirectionalCollection {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigSubstring.UTF8View {
   public func index(roundingDown i: Index) -> Index {
     precondition(i >= startIndex && i <= endIndex, "Index out of bounds")
@@ -174,4 +176,4 @@ extension BigSubstring.UTF8View {
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

@@ -2,29 +2,35 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString: TextOutputStream {
   public mutating func write(_ string: String) {
     append(contentsOf: string)
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString: TextOutputStreamable {
   public func write(to target: inout some TextOutputStream) {
     for chunk in _rope {
-      chunk.string.write(to: &target)
+      let str = String(unsafeUninitializedCapacity: chunk.utf8Count) {
+        $0.initialize(fromContentsOf: chunk._bytes)
+      }
+
+      str.write(to: &target)
     }
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

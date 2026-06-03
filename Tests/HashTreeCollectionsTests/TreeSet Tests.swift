@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -558,6 +560,24 @@ class TreeSetTests: CollectionTestCase {
     }
   }
 
+  func test_union_collision_node_ordering() {
+    // Regression test for child ordering issue.
+    let a1 = RawCollider(1, "B")  // level-0 bucket = 11
+    let a2 = RawCollider(2, "B")  // same hash → collision node with a1
+    let b1 = RawCollider(3, "A")  // level-0 bucket = 10
+    let b2 = RawCollider(4, "A")  // same hash → collision node with b1
+
+    let left = TreeSet([a1, a2])
+    let right = TreeSet([b1, b2])
+    let union = left.union(right)
+
+    expectEqual(union.count, 4)
+    expectTrue(union.contains(a1))
+    expectTrue(union.contains(a2))
+    expectTrue(union.contains(b1))
+    expectTrue(union.contains(b2))
+  }
+
   func test_symmetricDifference_exhaustive() {
     withEverySubset("a", of: testItems) { a in
       let x = TreeSet(a)
@@ -588,6 +608,13 @@ class TreeSetTests: CollectionTestCase {
     }
   }
 
+  func test_symmetricDifference_bitmapRegression() {
+    let left: TreeSet<Int> = [1, 3]
+    let right: TreeSet<Int> = [2, 3]
+    let result = left.symmetricDifference(right)
+    expectEqualSets(result, [1, 2])
+  }
+
   func test_mutating_binary_set_operations() {
     let a = [1, 2, 3, 4]
     let b = [0, 2, 4, 6]
@@ -601,7 +628,7 @@ class TreeSetTests: CollectionTestCase {
     func check(
       _ reference: Set<Int>,
       _ body: (inout TreeSet<Int>) -> Void,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var set = x

@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -46,6 +48,34 @@ extension Benchmark {
           timer.measure {
             for _ in set {
               c += 1
+            }
+          }
+          precondition(c == set.count)
+        }
+      }
+    }
+
+    for (percentage, count) in fillRatios {
+      self.add(
+        title: "BitSet index(after:) (\(percentage) filled)",
+        input: Int.self
+      ) { input in
+        guard input > 0 else { return nil }
+
+        var set = BitSet(reservingCapacity: input)
+        for i in (0 ..< input).shuffled().prefix(count(input)) {
+          set.insert(i)
+        }
+        // Make sure the set actually fills its storage capacity.
+        set.insert(input - 1)
+
+        return { timer in
+          var c = 0
+          timer.measure {
+            var i = set.startIndex
+            while i != set.endIndex {
+              c += 1
+              set.formIndex(after: &i)
             }
           }
           precondition(c == set.count)

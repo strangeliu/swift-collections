@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -15,9 +17,10 @@ import CollectionsBenchmark
 extension Deque {
   @inline(__always)
   internal init(discontiguous contents: [Element]) {
-    self.init(_capacity: contents.count,
-              startSlot: contents.count / 4,
-              contents: contents)
+    self.init(contents)
+    let c = contents.count / 4
+    self.removeFirst(c)
+    self.append(contentsOf: contents[..<c])
   }
 }
 
@@ -335,7 +338,6 @@ extension Benchmark {
       for i in input {
         deque.append(i)
       }
-      precondition(deque.count == input.count)
       blackHole(deque)
     }
 
@@ -510,7 +512,7 @@ extension Benchmark {
         blackHole(deque)
       }
     }
-    
+
     self.add(
       title: "Deque<Int> equality, unique",
       input: Int.self
@@ -523,7 +525,7 @@ extension Benchmark {
         }
       }
     }
-    
+
     self.add(
       title: "Deque<Int> equality, shared",
       input: Int.self
@@ -536,6 +538,5 @@ extension Benchmark {
         }
       }
     }
-    
   }
 }

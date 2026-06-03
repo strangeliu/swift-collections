@@ -1,12 +1,13 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift.org open source project
+// This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2014 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
-// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -21,7 +22,7 @@ import XCTest
 public func checkSequence<S: Sequence, Expected: Sequence>(
   _ sequenceGenerator: () -> S,
   expectedContents: Expected,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) where S.Element == Expected.Element, S.Element: Equatable {
   checkSequence(
@@ -36,7 +37,7 @@ public func checkSequence<S: Sequence, Expected: Sequence>(
   _ sequenceGenerator: () -> S,
   expectedContents: Expected,
   by areEquivalent: (S.Element, S.Element) -> Bool,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) where S.Element == Expected.Element {
   let entry = TestContext.current.push("checkSequence", file: file, line: line)

@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -118,8 +120,7 @@ extension _HashNode {
       // Note: for simplicity, we assume that there is no padding between
       // the object header and the storage header.
       let start = _getUnsafePointerToStoredProperties(self.raw.storage)
-      let capacity = self.raw.storage.capacity
-      let end = $0._memory + capacity * MemoryLayout<_RawHashNode>.stride
+      let end = $0._memory + $0.byteCapacity
       stats.grossBytes += objectHeaderSize + (end - start)
 
       for child in $0.children {

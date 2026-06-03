@@ -2,12 +2,16 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
+
+#if UnstableSortedCollections
 
 import XCTest
 @_spi(Testing) import SortedCollections
@@ -76,6 +80,97 @@ class SortedSetTests: CollectionTestCase {
         }
         expectNil(set.firstIndex(of: count))
         expectNil(set.lastIndex(of: count))
+      }
+    }
+  }
+  
+  func test_indexOf() {
+    withEvery("count", in: 0 ..< 40) { count in
+      let set = SortedSet(0 ..< count)
+      withEvery("item", in: 0 ..< count) { item in
+        expectNotNil(set.index(of: item)) { index in
+          expectEqual(set[index], item)
+          let offset = set.distance(from: set.startIndex, to: index)
+          expectEqual(offset, item)
+        }
+      }
+      expectNil(set.index(of: count))
+    }
+  }
+
+  func test_firstIndexAfter() {
+    withEvery("count", in: 0 ..< 40) { count in
+      // Use even numbers so we can exercise both the "present" and "absent"
+      // paths: a query of 2i hits an element, 2i+1 falls between elements.
+      let set = SortedSet((0 ..< count).map { $0 * 2 })
+      withEvery("item", in: 0 ..< count) { item in
+        let member = item * 2
+        let between = member + 1
+        if item + 1 < count {
+          let expected = (item + 1) * 2
+          expectNotNil(set.firstIndex(after: member)) { index in
+            expectEqual(set[index], expected)
+          }
+          expectNotNil(set.firstIndex(after: between)) { index in
+            expectEqual(set[index], expected)
+          }
+        } else {
+          expectNil(set.firstIndex(after: member))
+          expectNil(set.firstIndex(after: between))
+        }
+      }
+      if count > 0 {
+        expectNotNil(set.firstIndex(after: -1)) { index in
+          expectEqual(set[index], 0)
+        }
+      } else {
+        expectNil(set.firstIndex(after: -1))
+      }
+    }
+  }
+
+  func test_lastIndexBefore() {
+    withEvery("count", in: 0 ..< 40) { count in
+      let set = SortedSet((0 ..< count).map { $0 * 2 })
+      withEvery("item", in: 0 ..< count) { item in
+        let member = item * 2
+        let between = member + 1
+        if item > 0 {
+          let expected = (item - 1) * 2
+          expectNotNil(set.lastIndex(before: member)) { index in
+            expectEqual(set[index], expected)
+          }
+        } else {
+          expectNil(set.lastIndex(before: member))
+        }
+        // `between` is strictly greater than `member`, so the largest
+        // element less than it is always `member`.
+        expectNotNil(set.lastIndex(before: between)) { index in
+          expectEqual(set[index], member)
+        }
+      }
+      if count > 0 {
+        expectNotNil(set.lastIndex(before: count * 2)) { index in
+          expectEqual(set[index], (count - 1) * 2)
+        }
+      } else {
+        expectNil(set.lastIndex(before: 0))
+      }
+    }
+  }
+
+  func test_removeAtIndex() {
+    withEvery("count", in: 0 ..< 40) { count in
+      withEvery("index", in: 0..<count) { index in
+        var sorted = SortedSet(0 ..< count)
+        let removed = sorted.remove(at: sorted.index(sorted.startIndex, offsetBy: index))
+        
+        var comparisonKeys = Array(0 ..< count)
+        comparisonKeys.remove(at: index)
+        
+        expectEqual(removed, index)
+        expectEqual(sorted.count, count - 1)
+        expectEqualElements(sorted, comparisonKeys)
       }
     }
   }
@@ -202,7 +297,7 @@ class SortedSetTests: CollectionTestCase {
 
 
   func withSampleRanges(
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line,
     _ body: (Range<Int>, Range<Int>) throws -> Void
   ) rethrows {
@@ -445,4 +540,66 @@ class SortedSetTests: CollectionTestCase {
       }
     }
   }
+
+  func test_rangeSubscript() {
+    withEvery("count", in: [0, 1, 5, 32, 64]) { count in
+      let set = SortedSet(0 ..< count)
+      guard count > 0 else { return }
+      withEvery("lo", in: 0 ..< count) { lo in
+        withEvery("hi", in: lo ... count) { hi in
+          let slice = set[lo ..< hi]
+          expectEqualElements(slice, lo ..< hi)
+        }
+      }
+    }
+  }
+
+  func test_closedRangeSubscript() {
+    withEvery("count", in: [1, 5, 32, 64]) { count in
+      // Use even values so `2i+1` probes positions that fall between members.
+      let set = SortedSet((0 ..< count).map { $0 * 2 })
+      withEvery("lo", in: 0 ... 2 * count) { lo in
+        withEvery("hi", in: lo ... 2 * count) { hi in
+          let slice = set[lo ... hi]
+          let expected = (lo ... hi).filter { $0.isMultiple(of: 2) && $0 < 2 * count }
+          expectEqualElements(slice, expected)
+        }
+      }
+    }
+  }
+
+  func test_partialRangeFromSubscript() {
+    withEvery("count", in: [0, 1, 5, 32, 64]) { count in
+      let set = SortedSet((0 ..< count).map { $0 * 2 })
+      withEvery("lo", in: -1 ... 2 * count) { lo in
+        let slice = set[lo...]
+        let expected = (0 ..< count).map { $0 * 2 }.filter { $0 >= lo }
+        expectEqualElements(slice, expected)
+      }
+    }
+  }
+
+  func test_partialRangeUpToSubscript() {
+    withEvery("count", in: [0, 1, 5, 32, 64]) { count in
+      let set = SortedSet((0 ..< count).map { $0 * 2 })
+      withEvery("hi", in: 0 ... 2 * count) { hi in
+        let slice = set[..<hi]
+        let expected = (0 ..< count).map { $0 * 2 }.filter { $0 < hi }
+        expectEqualElements(slice, expected)
+      }
+    }
+  }
+
+  func test_partialRangeThroughSubscript() {
+    withEvery("count", in: [0, 1, 5, 32, 64]) { count in
+      let set = SortedSet((0 ..< count).map { $0 * 2 })
+      withEvery("hi", in: -1 ... 2 * count) { hi in
+        let slice = set[...hi]
+        let expected = (0 ..< count).map { $0 * 2 }.filter { $0 <= hi }
+        expectEqualElements(slice, expected)
+      }
+    }
+  }
 }
+
+#endif

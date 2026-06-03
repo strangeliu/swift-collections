@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -212,7 +214,7 @@ extension Heap {
           handle.swapAt(.leftMax, with: &removed)
         }
       } else {
-        let maxNode = handle.maxValue(.rightMax, .leftMax)
+        let maxNode = handle.maxValue(.leftMax, .rightMax)
         handle.swapAt(maxNode, with: &removed)
         handle.trickleDownMax(maxNode)
       }
@@ -267,6 +269,28 @@ extension Heap {
     }
     _checkInvariants()
     return removed
+  }
+    
+  /// Removes all the elements that satisfy the given predicate.
+  ///
+  /// - Parameter shouldBeRemoved: A closure that takes an element of the
+  ///   heap as its argument and returns a Boolean value indicating
+  ///   whether the element should be removed from the heap.
+  ///
+  /// - Complexity: O(*n*), where *n* is the number of items in the heap.
+  @inlinable
+  public mutating func removeAll(
+    where shouldBeRemoved: (Element) throws -> Bool
+  ) rethrows {
+    defer {
+      if _storage.count > 1 {
+        _update { handle in
+          handle.heapify()
+        }
+      }
+      _checkInvariants()
+    }
+    try _storage.removeAll(where: shouldBeRemoved)
   }
 
   /// Replaces the maximum value in the heap with the given replacement,
@@ -341,7 +365,7 @@ extension Heap {
 
     guard newCount > origCount, newCount > 1 else {
       // If we didn't append, or the result is too small to violate heapness,
-      // then we have nothing else to dp.
+      // then we have nothing else to do.
       return
     }
 
@@ -358,8 +382,8 @@ extension Heap {
     // that.
     //
     // FIXME: Write a benchmark to verify this heuristic.
-    let heuristicLimit = 2 * newCount / newCount._binaryLogarithm()
-    let useFloyd = (newCount - origCount) < heuristicLimit
+    let heuristicLimit = 2 &* newCount / newCount._binaryLogarithm()
+    let useFloyd = (newCount - origCount) > heuristicLimit
     _update { handle in
       if useFloyd {
         handle.heapify()

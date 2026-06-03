@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -79,6 +81,29 @@ extension OrderedSet {
   ) -> Self {
     var result = self
     result.formUnion(other)
+    return result
+  }
+
+  /// Returns a new set with the contents of a sequence appended to the end of the set, excluding
+  /// elements that are already members.
+  ///
+  ///     let a: OrderedSet = [1, 2, 3, 4]
+  ///     let b: OrderedSet = [0, 2, 4, 6]
+  ///     a.appending(contentsOf: b) // [1, 2, 3, 4, 0, 6]
+  ///
+  /// This is functionally equivalent to `self.union(elements)`, but it's
+  /// more explicit about how the new members are ordered in the new set.
+  ///
+  /// - Parameter elements: A finite sequence of elements to append.
+  ///
+  /// - Complexity: Expected to be O(`self.count` + `elements.count`) on average,
+  ///    if `Element` implements high-quality hashing.
+  @inlinable
+  public __consuming func appending(
+    contentsOf elements: __owned some Sequence<Element>
+  ) -> Self {
+    var result = self
+    result.append(contentsOf: elements)
     return result
   }
 }

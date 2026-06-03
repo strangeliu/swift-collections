@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -40,7 +42,7 @@ import InternalCollectionsUtilities
 /// it is different from the unordered `Set`.
 ///
 ///     let a: OrderedSet = [1, 2, 3, 4]
-///     let b: OrderedSet = [4, 3, 2, 1]
+///     var b: OrderedSet = [4, 3, 2, 1]
 ///     a == b // false
 ///     b.sort() // `b` now has value [1, 2, 3, 4]
 ///     a == b // true
@@ -90,7 +92,7 @@ import InternalCollectionsUtilities
 /// it implements the same concept of equality as the standard `Set`, ignoring
 /// element ordering.
 ///
-///     var a: OrderedSet = [0, 1, 2, 3]
+///     let a: OrderedSet = [0, 1, 2, 3]
 ///     let b: OrderedSet = [3, 2, 1, 0]
 ///     a == b // false
 ///     a.unordered == b.unordered // true
@@ -174,7 +176,7 @@ import InternalCollectionsUtilities
 ///
 ///     func pickyFunction(_ items: Array<Int>)
 ///
-///     var set: OrderedSet = [0, 1, 2, 3]
+///     let set: OrderedSet = [0, 1, 2, 3]
 ///     pickyFunction(set) // error
 ///     pickyFunction(set.elements) // OK
 ///
@@ -433,7 +435,7 @@ extension OrderedSet {
   internal func _find_inlined(_ item: Element) -> (index: Int?, bucket: _Bucket) {
     _elements.withUnsafeBufferPointer { elements in
       guard let table = _table else {
-        return (elements.firstIndex(of: item), _Bucket(offset: 0))
+        return (elements._firstIndex(of: item), _Bucket(offset: 0))
       }
       return table.read { hashTable in
         hashTable._find(item, in: elements)
@@ -478,6 +480,22 @@ extension OrderedSet {
   @inline(__always)
   public func lastIndex(of element: Element) -> Int? {
     _find(element).index
+  }
+}
+
+/// copy of the standard library implementation of `Collection.firstIndex(of:)`
+/// to allow partial specialization if `Element` is not known at compile time
+extension UnsafeBufferPointer where Element: Equatable {
+  @inlinable
+  func _firstIndex(of element: Element) -> Index? {
+    var i = self.startIndex
+    while i != self.endIndex {
+      if self[i] == element {
+        return i
+      }
+      self.formIndex(after: &i)
+    }
+    return nil
   }
 }
 

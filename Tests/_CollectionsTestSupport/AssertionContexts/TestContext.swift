@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -14,13 +16,14 @@ import XCTest
 public final class TestContext {
   internal var _nextStateId = 0
   internal var _nextIndexId = 0
+  internal var _failureCount = 0
 
   /// Stack of labels with associated source positions.
   /// Useful for tracking failed cases in combinatorial tests.
   internal var _trace: [Entry] = []
 
   // FIXME: This ought to be a thread-local variable.
-  internal static var _current: TestContext?
+  nonisolated(unsafe) internal static var _current: TestContext?
 
   public init() {}
 }
@@ -32,6 +35,10 @@ extension TestContext {
     }
     return current
   }
+  
+  /// Don't report more than this number of failures per test, to avoid
+  /// overwhelming Xcode's display engine.
+  public static var maximumFailureCount: Int { 100 }
 
   public static func pushNew() -> TestContext {
     let context = TestContext()
@@ -40,12 +47,12 @@ extension TestContext {
   }
 
   public static func push(_ context: TestContext) {
-    precondition(_current == nil, "Can't nest test contexts")
+    precondition(_current == nil, "Cannot nest test contexts")
     _current = context
   }
 
   public static func pop(_ context: TestContext) {
-    precondition(_current === context, "Can't pop mismatching context")
+    precondition(_current === context, "Cannot pop mismatching context")
     _current = nil
   }
 }
@@ -59,7 +66,7 @@ extension TestContext {
 
     public init(
       label: String,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       self.label = label
@@ -121,7 +128,7 @@ extension TestContext {
   @discardableResult
   public func push(
     _ label: String,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) -> Entry {
     return push(Entry(label: label, file: file, line: line))
@@ -157,7 +164,7 @@ extension TestContext {
   /// Assertion failure messages within the closure will include the specified information to aid with debugging.
   public func withTrace<R>(
     _ label: String,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line,
     _ body: () throws -> R
   ) rethrows -> R {
@@ -191,6 +198,16 @@ extension TestContext {
     for trace in _trace {
       result += "  - \(trace.label)\n"
     }
+    if _failureCount == Self.maximumFailureCount {
+      result += "*** Failure limit reached; additional failures will be suppressed ***"
+    }
+    return result
+  }
+  
+  public static func incrementFailureCount() -> Bool {
+    guard let context = _current else { return true }
+    let result = context._failureCount < maximumFailureCount
+    context._failureCount += 1
     return result
   }
 
@@ -208,7 +225,7 @@ extension TestContext {
   @inline(never)
   public func debuggerBreak(
     _ message: String,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     XCTFail(message, file: file, line: line)
@@ -241,7 +258,7 @@ extension TestContext {
   ///
   public func failIfTraceMatches(
     _ expectedTrace: String,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) {
     // Filter for lines that match the regex " *- "

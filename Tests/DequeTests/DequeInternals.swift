@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -16,7 +18,43 @@ import _CollectionsTestSupport
 @_spi(Testing) import DequeModule
 #endif
 
-internal struct DequeLayout: CustomStringConvertible {
+#if compiler(>=6.2)
+@available(SwiftStdlib 5.0, *)
+internal struct RigidTestData<Element>: ~Copyable {
+  var deque: RigidDeque<Element>
+  var contents: [Element]
+  
+  init(_ deque: consuming RigidDeque<Element>, _ contents: [Element]) {
+    self.deque = deque
+    self.contents = contents
+  }
+  
+  mutating func take() -> RigidDeque<Element> {
+    exchange(&self.deque, with: .init())
+  }
+  
+  consuming func consume() -> RigidDeque<Element> {
+    exchange(&self.deque, with: .init())
+  }
+}
+
+@available(SwiftStdlib 5.0, *)
+internal struct UniqueTestData<Element>: ~Copyable {
+  var deque: UniqueDeque<Element>
+  var contents: [Element]
+  
+  init(_ deque: consuming RigidDeque<Element>, _ contents: [Element]) {
+    self.init(UniqueDeque(consuming: deque), contents)
+  }
+
+  init(_ deque: consuming UniqueDeque<Element>, _ contents: [Element]) {
+    self.deque = deque
+    self.contents = contents
+  }
+}
+#endif
+
+internal struct DequeLayout: Hashable, CustomStringConvertible {
   let capacity: Int
   let startSlot: Int
   let count: Int
@@ -29,6 +67,7 @@ internal struct DequeLayout: CustomStringConvertible {
     self.startValue = startValue
   }
 
+  var freeCapacity: Int { capacity - count }
   var valueRange: Range<Int> { startValue ..< startValue + count }
 
   var description: String {
@@ -52,6 +91,16 @@ extension Deque {
   }
 }
 
+#if compiler(>=6.2)
+@available(SwiftStdlib 5.0, *)
+extension RigidDeque {
+  init<C: Collection>(layout: DequeLayout, contents: C) where C.Element == Element {
+    precondition(contents.count == layout.count)
+    self.init(_capacity: layout.capacity, startSlot: layout.startSlot, copying: contents)
+  }
+}
+#endif
+
 extension LifetimeTracker {
   func deque(
     with layout: DequeLayout
@@ -60,13 +109,33 @@ extension LifetimeTracker {
     let deque = Deque(layout: layout, contents: contents)
     return (deque, contents)
   }
+  
+#if compiler(>=6.2)
+  @available(SwiftStdlib 5.0, *)
+  func rigidDeque(
+    with layout: DequeLayout
+  ) -> RigidTestData<LifetimeTracked<Int>> {
+    let contents = self.instances(for: layout.valueRange)
+    let deque = RigidDeque(layout: layout, contents: contents)
+    return RigidTestData(deque, contents)
+  }
+  
+  @available(SwiftStdlib 5.0, *)
+  func uniqueDeque(
+    with layout: DequeLayout
+  ) -> UniqueTestData<LifetimeTracked<Int>> {
+    let contents = self.instances(for: layout.valueRange)
+    let deque = RigidDeque(layout: layout, contents: contents)
+    return UniqueTestData(deque, contents)
+  }
+#endif
 }
 
 func withEveryDeque<C: Collection>(
   _ label: String,
   ofCapacities capacities: C,
   startValue: Int = 0,
-  file: StaticString = #file, line: UInt = #line,
+  file: StaticString = #filePath, line: UInt = #line,
   _ body: (DequeLayout) throws -> Void
 ) rethrows -> Void where C.Element == Int {
   // Exhaustive tests for all deque layouts of various capacities

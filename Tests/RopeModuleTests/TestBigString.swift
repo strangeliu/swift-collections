@@ -2,15 +2,17 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
-import XCTest
+#if compiler(>=6.2)
+@preconcurrency import XCTest
 #if COLLECTIONS_SINGLE_MODULE
 import Collections
 #else
@@ -18,7 +20,7 @@ import _CollectionsTestSupport
 import _RopeModule
 #endif
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 class TestBigString: CollectionTestCase {
   override var isAvailable: Bool { isRunningOnSwiftStdlib5_8 }
 
@@ -28,7 +30,7 @@ class TestBigString: CollectionTestCase {
     setbuf(stderr, nil)
     super.setUp()
   }
-  
+
   override func setUp() {
     print("Global seed: \(RepeatableRandomNumberGenerator.globalSeed)")
     super.setUp()
@@ -135,11 +137,21 @@ class TestBigString: CollectionTestCase {
     checkHashable(equivalenceClasses: classes.map { [$0.utf16] })
   }
 
+  func test_utf8_hashing_infinite_loop() {
+    let str = String(repeating: "a", count: 400)
+    let big = BigString(str)
+    let sub = BigSubstring(big, in: big.startIndex ..< big.endIndex)
+
+    // Both paths feed the same UTF-8 bytes to the same Hasher API and must agree.
+    expectEqual(sub.utf8.hashValue, big.utf8.hashValue)
+    expectEqual(sub.unicodeScalars.hashValue, big.unicodeScalars.hashValue)
+  }
+
   @discardableResult
   func checkCharacterIndices(
     _ flat: String,
     _ big: BigString,
-    file: StaticString = #file, line: UInt = #line
+    file: StaticString = #filePath, line: UInt = #line
   ) -> (flat: [String.Index], big: [BigString.Index]) {
     // Check iterators
     var it1 = flat.makeIterator()
@@ -161,7 +173,7 @@ class TestBigString: CollectionTestCase {
         $0 == big.endIndex ? nil : big.index(after: $0)
       }
     )
-    
+
     expectEqual(indices2.count, indices1.count, file: file, line: line)
 
     let c = min(indices1.count, indices2.count)
@@ -172,7 +184,7 @@ class TestBigString: CollectionTestCase {
       guard i1 < flat.endIndex, i2 < big.endIndex else { continue }
       let c1 = flat[i1]
       let c2 = big[i2]
-      expectEqual(c1, c2, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(c1, c2, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
 
     for i in 0 ..< c {
@@ -180,16 +192,16 @@ class TestBigString: CollectionTestCase {
       let i2 = indices2[i]
       let d1 = flat.utf8.distance(from: flat.startIndex, to: i1)
       let d2 = big.utf8.distance(from: big.startIndex, to: i2)
-      expectEqual(d2, d1, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(d2, d1, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
     return (indices1, indices2)
   }
-  
+
   @discardableResult
   func checkScalarIndices(
     _ flat: String,
     _ big: BigString,
-    file: StaticString = #file, line: UInt = #line
+    file: StaticString = #filePath, line: UInt = #line
   ) -> (flat: [String.Index], big: [BigString.Index]) {
     // Check iterators
     var it1 = flat.unicodeScalars.makeIterator()
@@ -211,7 +223,7 @@ class TestBigString: CollectionTestCase {
         $0 == big.endIndex ? nil : big.unicodeScalars.index(after: $0)
       }
     )
-    
+
     expectEqual(indices2.count, indices1.count, file: file, line: line)
 
     let c = min(indices1.count, indices2.count)
@@ -222,7 +234,7 @@ class TestBigString: CollectionTestCase {
       guard i1 < flat.endIndex, i2 < big.endIndex else { continue }
       let c1 = flat.unicodeScalars[i1]
       let c2 = big.unicodeScalars[i2]
-      expectEqual(c1, c2, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(c1, c2, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
 
     for i in 0 ..< c {
@@ -230,16 +242,16 @@ class TestBigString: CollectionTestCase {
       let i2 = indices2[i]
       let d1 = flat.utf8.distance(from: flat.startIndex, to: i1)
       let d2 = big.utf8.distance(from: big.startIndex, to: i2)
-      expectEqual(d2, d1, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(d2, d1, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
     return (indices1, indices2)
   }
-  
+
   @discardableResult
   func checkUTF8Indices(
     _ flat: String,
     _ big: BigString,
-    file: StaticString = #file, line: UInt = #line
+    file: StaticString = #filePath, line: UInt = #line
   ) -> (flat: [String.Index], big: [BigString.Index]) {
     // Check iterators
     var it1 = flat.utf8.makeIterator()
@@ -261,7 +273,7 @@ class TestBigString: CollectionTestCase {
         $0 == big.endIndex ? nil : big.utf8.index(after: $0)
       }
     )
-    
+
     expectEqual(indices2.count, indices1.count, file: file, line: line)
 
     let c = min(indices1.count, indices2.count)
@@ -272,7 +284,7 @@ class TestBigString: CollectionTestCase {
       guard i1 < flat.endIndex, i2 < big.endIndex else { continue }
       let c1 = flat.utf8[i1]
       let c2 = big.utf8[i2]
-      expectEqual(c1, c2, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(c1, c2, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
 
     for i in 0 ..< c {
@@ -280,16 +292,16 @@ class TestBigString: CollectionTestCase {
       let i2 = indices2[i]
       let d1 = flat.utf8.distance(from: flat.startIndex, to: i1)
       let d2 = big.utf8.distance(from: big.startIndex, to: i2)
-      expectEqual(d2, d1, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(d2, d1, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
     return (indices1, indices2)
   }
-  
+
   @discardableResult
   func checkUTF16Indices(
     _ flat: String,
     _ big: BigString,
-    file: StaticString = #file, line: UInt = #line
+    file: StaticString = #filePath, line: UInt = #line
   ) -> (flat: [String.Index], big: [BigString.Index]) {
     // Check iterators
     var it1 = flat.utf16.makeIterator()
@@ -322,7 +334,7 @@ class TestBigString: CollectionTestCase {
       guard i1 < flat.endIndex, i2 < big.endIndex else { continue }
       let c1 = flat.utf16[i1]
       let c2 = big.utf16[i2]
-      expectEqual(c1, c2, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(c1, c2, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
 
     for i in 0 ..< c {
@@ -330,7 +342,7 @@ class TestBigString: CollectionTestCase {
       let i2 = indices2[i]
       let d1 = flat.utf16.distance(from: flat.startIndex, to: i1)
       let d2 = big.utf16.distance(from: big.startIndex, to: i2)
-      expectEqual(d2, d1, "i: \(i), i1: \(i1._description), i2: \(i2)", file: file, line: line)
+      expectEqual(d2, d1, "i: \(i), i1: \(i1), i2: \(i2)", file: file, line: line)
     }
     return (indices1, indices2)
   }
@@ -399,16 +411,16 @@ class TestBigString: CollectionTestCase {
   func test_indices_character() {
     let flat = sampleString
     let big = BigString(flat)
-    
+
     let (indices1, indices2) = checkCharacterIndices(flat, big)
-    
+
     let c = min(indices1.count, indices2.count)
     for i in randomStride(from: 0, to: c, by: 5, seed: 0) {
       for j in randomStride(from: i, to: c, by: 5, seed: i) {
         let i1 = indices1[i]
         let j1 = indices1[j]
         let a = String(sampleString[i1 ..< j1])
-        
+
         let i2 = indices2[i]
         let j2 = big.index(i2, offsetBy: j - i)
         expectEqual(big.index(roundingDown: i2), i2)
@@ -418,18 +430,18 @@ class TestBigString: CollectionTestCase {
       }
     }
   }
-  
+
   func test_indices_scalar() {
     let flat = sampleString
     let big = BigString(flat)
-    
+
     let (indices1, indices2) = checkScalarIndices(flat, big)
-    
+
     let c = min(indices1.count, indices2.count)
     for i in randomStride(from: 0, to: c, by: 20, seed: 0) {
       for j in randomStride(from: i, to: c, by: 20, seed: i) {
         let a = String(sampleString.unicodeScalars[indices1[i] ..< indices1[j]])
-        
+
         let i2 = indices2[i]
         let j2 = big.unicodeScalars.index(i2, offsetBy: j - i)
         expectEqual(big.unicodeScalars.index(roundingDown: i2), i2)
@@ -440,13 +452,13 @@ class TestBigString: CollectionTestCase {
       }
     }
   }
-  
+
   func test_indices_utf16() {
     let flat = sampleString
     let big = BigString(flat)
-    
+
     let (indices1, indices2) = checkUTF16Indices(flat, big)
-    
+
     let c = min(indices1.count, indices2.count)
     for i in randomStride(from: 0, to: c, by: 20, seed: 0) {
       for j in randomStride(from: i, to: c, by: 20, seed: i) {
@@ -462,13 +474,13 @@ class TestBigString: CollectionTestCase {
       }
     }
   }
-  
+
   func test_indices_utf8() {
     let flat = sampleString
     let big = BigString(flat)
-    
+
     let (indices1, indices2) = checkUTF8Indices(flat, big)
-    
+
     let c = min(indices1.count, indices2.count)
     for i in randomStride(from: 0, to: c, by: 40, seed: 0) {
       for j in randomStride(from: i, to: c, by: 40, seed: i) {
@@ -484,37 +496,43 @@ class TestBigString: CollectionTestCase {
       }
     }
   }
-  
+
   func test_append_string() {
     let flat = sampleString
     let ref = BigString(flat)
-    for stride in [1, 2, 4, 8, 16, 32, 64, 128, 250, 1000, 10000, 20000] {
+
+    withEvery("stride", in: [1, 2, 4, 8, 16, 32, 64, 128, 250, 1000, 10_000, 20_000]) {
       var big: BigString = ""
       var i = flat.startIndex
+
       while i < flat.endIndex {
-        let j = flat.unicodeScalars.index(i, offsetBy: stride, limitedBy: flat.endIndex) ?? flat.endIndex
+        let j = flat.unicodeScalars.index(i, offsetBy: $0, limitedBy: flat.endIndex) ?? flat.endIndex
         let next = String(flat[i ..< j])
         big.append(contentsOf: next)
         //big.invariantCheck()
         //expectEqual(String(big)[...], s[..<j])
         i = j
       }
+
       checkUTF8Indices(flat, big)
-      checkUTF8Indices(flat, big)
+      checkUTF16Indices(flat, big)
       checkScalarIndices(flat, big)
       checkCharacterIndices(flat, big)
-      expectTrue(big.utf8 == ref.utf8)
+
+      expectTrue(ref.utf8 == big.utf8)
     }
   }
-  
+
   func test_append_big() {
     let flat = sampleString
     let ref = BigString(flat)
-    for stride in [16, 32, 64, 128, 250, 1000, 10000, 20000] {
+
+    withEvery("stride", in: [16, 32, 64, 128, 250, 1000, 10000, 20000]) {
       var big: BigString = ""
       var i = flat.startIndex
+
       while i < flat.endIndex {
-        let j = flat.unicodeScalars.index(i, offsetBy: stride, limitedBy: flat.endIndex) ?? flat.endIndex
+        let j = flat.unicodeScalars.index(i, offsetBy: $0, limitedBy: flat.endIndex) ?? flat.endIndex
         let s = flat[i ..< j]
         let piece = BigString(s)
         piece._invariantCheck()
@@ -523,14 +541,16 @@ class TestBigString: CollectionTestCase {
         big._invariantCheck()
         i = j
       }
+
       checkUTF8Indices(flat, big)
       checkUTF8Indices(flat, big)
       checkScalarIndices(flat, big)
       checkCharacterIndices(flat, big)
+
       expectTrue(big.utf8 == ref.utf8)
     }
   }
-  
+
   func pieces(of str: String, by stride: Int) -> [(i: Int, str: String)] {
     var pieces: [(i: Int, str: String)] = []
     var c = 0
@@ -574,7 +594,7 @@ class TestBigString: CollectionTestCase {
       var pieces = pieces(of: flat, by: stride)
       var rng = RepeatableRandomNumberGenerator(seed: 0)
       pieces.shuffle(using: &rng)
-      
+
       var big: BigString = ""
       var smol = ""
       for i in pieces.indices {
@@ -583,17 +603,17 @@ class TestBigString: CollectionTestCase {
           guard $1.i < piece.i else { return }
           $0 += $1.str.utf8.count
         }
-        
+
         let j = smol.utf8.index(smol.startIndex, offsetBy: utf8Offset)
         smol.insert(contentsOf: piece.str, at: j)
-        
+
         let index = big.utf8.index(big.startIndex, offsetBy: utf8Offset)
         //print("\(i)/\(pieces.count): i: \(piece.i), start: \(index), str: \(piece.str._properDebugDescription)")
         big.insert(contentsOf: piece.str, at: index)
-        
+
         if i % 20 == 0 {
           big._invariantCheck()
-          
+
           expectEqual(String(big), smol)
           checkUTF8Indices(smol, big)
           checkUTF16Indices(smol, big)
@@ -609,16 +629,16 @@ class TestBigString: CollectionTestCase {
       checkCharacterIndices(flat, big)
     }
   }
-  
+
   func test_insert_big() {
     let flat = sampleString
     let ref = BigString(flat)
-    for stride in [64, 128, 250, 256, 257, 500, 512, 513, 1000, 2000, 10000, 20000] {
-      print("Stride: \(stride)")
-      var pieces = pieces(of: flat, by: stride)
+
+    withEvery("stride", in: [64, 128, 250, 256, 257, 500, 512, 513, 1000, 2000, 10000, 20000]) {
+      var pieces = pieces(of: flat, by: $0)
       var rng = RepeatableRandomNumberGenerator(seed: 0)
       pieces.shuffle(using: &rng)
-      
+
       var big: BigString = ""
       var smol = ""
       for i in pieces.indices {
@@ -627,16 +647,18 @@ class TestBigString: CollectionTestCase {
           guard $1.i < piece.i else { return }
           $0 += $1.str.utf8.count
         }
-        
+
         let j = smol.utf8.index(smol.startIndex, offsetBy: utf8Offset)
         smol.insert(contentsOf: piece.str, at: j)
-        
+
         let index = big.utf8.index(big.startIndex, offsetBy: utf8Offset)
         //print("\(i)/\(pieces.count): i: \(piece.i), start: \(index), str: \(piece.str._properDebugDescription)")
-        
+
         let p = BigString(piece.str)
         big.insert(contentsOf: p, at: index)
-        
+
+        expectEqual(smol.count, big.count)
+
         if i % 20 == 0 {
           big._invariantCheck()
           expectEqual(String(big), smol)
@@ -646,6 +668,7 @@ class TestBigString: CollectionTestCase {
           checkCharacterIndices(smol, big)
         }
       }
+
       big._invariantCheck()
       expectTrue(big.utf8 == ref.utf8)
       checkUTF8Indices(flat, big)
@@ -759,7 +782,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -790,7 +813,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -818,7 +841,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -847,7 +870,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -873,7 +896,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -902,7 +925,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -928,7 +951,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -965,7 +988,7 @@ class TestBigString: CollectionTestCase {
 
     func check(
       _ indices: some Sequence<BigString.Index>,
-      file: StaticString = #file,
+      file: StaticString = #filePath,
       line: UInt = #line
     ) {
       var current = str.startIndex
@@ -1052,5 +1075,89 @@ class TestBigString: CollectionTestCase {
     expectNotEqual(cafe1.utf8, cafe2.utf8)
     expectNotEqual(cafe1.utf16, cafe2.utf16)
   }
+
+  func test_single_overlong_character() {
+    withEvery("x", in: 0 ..< 300) { x in
+      let str = "a" + String(repeating: "\u{301}", count: x)
+      let big = BigString(str)
+      expectEqual(big.count, 1)
+      expectEqual(big.distance(from: big.startIndex, to: big.endIndex), 1)
+      expectEqual(big.index(after: big.startIndex), big.endIndex)
+      checkBidirectionalCollection(big, expectedContents: str)
+    }
+  }
+
+  func test_characters_on_chunk_boundaries() {
+    withEvery("x", in: 0 ..< 5) { x in
+      let str = String(repeating: "a\u{301}\u{302}", count: 64) + String(repeating: "x", count: x)
+      let c = str.count
+      let big = BigString(str)
+      big._dump()
+      expectEqual(big.count, c)
+      expectEqual(big.distance(from: big.startIndex, to: big.endIndex), c)
+      checkBidirectionalCollection(big, expectedContents: str)
+    }
+  }
+
+  func test_character_calculations_between_unaligned_utf8_indices() {
+    withEvery("x", in: 0 ..< 5) { x in
+      let str = String(repeating: "a\u{301}\u{302}", count: 64) + String(repeating: "x", count: x)
+      let flat = str // sampleString
+      let big = BigString(flat)
+      big._dump()
+
+      let indices1 = Array(flat.utf8.indices) + [flat.endIndex]
+      let indices2 = Array(big.utf8.indices) + [big.endIndex]
+
+      expectEqual(indices2.count, indices1.count)
+      let c = min(indices1.count, indices2.count)
+      withEvery("a", in: 0 ..< c) { a in
+        let i1 = indices1[a]
+        let i2 = indices2[a]
+        withEvery("b", in: a ..< c) { b in
+          let j1 = indices1[b]
+          let j2 = indices2[b]
+
+          let d1 = flat.distance(from: i1, to: j1)
+          let d2 = big.distance(from: i2, to: j2)
+          expectEqual(d2, d1)
+
+          let k2 = big.index(i2, offsetBy: d2)
+          expectEqual(k2, big.index(roundingDown: j2))
+        }
+      }
+    }
+  }
+
+  func test_character_calculations_between_unaligned_utf16_indices() {
+    withEvery("x", in: 0 ..< 5) { x in
+      let str = String(repeating: "🇨🇦🇺🇸", count: 16) + String(repeating: "x", count: x)
+      let flat = str // sampleString
+      let big = BigString(flat)
+      big._dump()
+
+      let indices1 = Array(flat.utf16.indices) + [flat.endIndex]
+      let indices2 = Array(big.utf16.indices) + [big.endIndex]
+      expectEqual(indices2.count, indices1.count)
+      let c = min(indices1.count, indices2.count)
+      withEvery("a", in: 0 ..< c) { a in
+        let i1 = indices1[a]
+        let i2 = indices2[a]
+        withEvery("b", in: a ..< c) { b in
+          let j1 = indices1[b]
+          let j2 = indices2[b]
+
+          let d1 = flat.distance(from: i1, to: j1)
+          let d2 = big.distance(from: i2, to: j2)
+          expectEqual(d2, d1, "distance from \(i2) to \(j2)")
+
+          let k2 = big.index(i2, offsetBy: d2)
+          let r2 = big.index(roundingDown: j2)
+          expectEqual(k2, r2, "distance: \(d2), index: \(k2), rounded: \(r2)")
+        }
+      }
+    }
+  }
 }
-#endif
+
+#endif // compiler(>=6.2)

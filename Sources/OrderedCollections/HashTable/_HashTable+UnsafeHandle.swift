@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -164,7 +166,7 @@ extension _HashTable.UnsafeHandle {
   }
 
   /// Return the index of the word logically preceding `word` in this hash table.
-  /// The buckets form a cycle, so the first word is logically preceded by the first.
+  /// The buckets form a cycle, so the first word is logically preceded by the last.
   ///
   /// Note that the last word may be only partially filled if `scale` is less than 6.
   @inlinable
@@ -227,11 +229,11 @@ extension _HashTable.UnsafeHandle {
   @inlinable
   subscript(word word: Int) -> UInt64 {
     @inline(__always) get {
-      assert(word >= 0 && word < bucketCount)
+      assert(word >= 0 && word < wordCount)
       return _buckets[word]
     }
     @inline(__always) nonmutating set {
-      assert(word >= 0 && word < bucketCount)
+      assert(word >= 0 && word < wordCount)
       assertMutable()
       _buckets[word] = newValue
     }
@@ -292,11 +294,20 @@ extension _HashTable.UnsafeHandle {
 
 extension _UnsafeHashTable {
   @inlinable
-  internal func _find<Base: RandomAccessCollection>(
-    _ item: Base.Element,
-    in elements: Base
-  ) -> (index: Int?, bucket: Bucket)
-  where Base.Element: Hashable {
+  internal func _find<Element: Hashable>(
+    _ item: Element,
+    in elements: ContiguousArray<Element>
+  ) -> (index: Int?, bucket: Bucket) {
+    elements.withUnsafeBufferPointer { buffer in
+      _find(item, in: buffer)
+    }
+  }
+
+  @inlinable
+  internal func _find<Element: Hashable>(
+    _ item: Element,
+    in elements: UnsafeBufferPointer<Element>
+  ) -> (index: Int?, bucket: Bucket) {
     let start = idealBucket(for: item)
     var (iterator, value) = startFind(start)
     while let index = value {
@@ -502,6 +513,24 @@ extension _UnsafeHashTable {
   ) where C.Element: Hashable {
     assertMutable()
     assert(elements.count <= capacity)
+    // fast path that doesn't allocate per element if _read accessor can't
+    // be inlined because this function doesn't get specialized e.g.
+    // if `Element` isn't known at compile time.
+    let fastPath: Void? = elements.withContiguousStorageIfAvailable { elements in
+      // Iterate over elements and insert their offset into the hash table.
+      var offset = 0
+      for index in elements.indices {
+        // Find the insertion position. We know that we're inserting a new item,
+        // so there is no need to compare it with any of the existing ones.
+        var it = bucketIterator(for: elements[index])
+        it.advanceToNextUnoccupiedBucket()
+        it.currentValue = offset
+        offset += 1
+      }
+    }
+    if fastPath != nil {
+      return
+    }
     // Iterate over elements and insert their offset into the hash table.
     var offset = 0
     for index in elements.indices {
@@ -527,6 +556,30 @@ extension _UnsafeHashTable {
     assertMutable()
     assert(elements.count <= capacity)
     // Iterate over elements and insert their offset into the hash table.
+    
+    // fast path that doesn't allocate per element if _read accessor can't
+    // be inlined because this function doesn't get specialized e.g.
+    // if `Element` isn't known at compile time.
+    let fastPath: (success: Bool, end: Int)? = elements.withContiguousStorageIfAvailable { elements in
+      var offset = 0
+      for index in elements.indices {
+        // Find the insertion position. We know that we're inserting a new item,
+        // so there is no need to compare it with any of the existing ones.
+        var it = bucketIterator(for: elements[index])
+        while let offset = it.currentValue {
+          guard elements[_offset: offset] != elements[index] else {
+            return (false, index)
+          }
+          it.advance()
+        }
+        it.currentValue = offset
+        offset += 1
+      }
+      return (true, elements.endIndex)
+    }
+    if let fastPath {
+      return (fastPath.success, elements.index(elements.startIndex, offsetBy: fastPath.end))
+    }
     var offset = 0
     for index in elements.indices {
       // Find the insertion position. We know that we're inserting a new item,

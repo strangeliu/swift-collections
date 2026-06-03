@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -123,7 +125,7 @@ func expectEqualSets<Element: Hashable>(
   _ ref: [Element],
   _ message: @autoclosure () -> String = "",
   trapping: Bool = false,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) {
   expectEqualSets(
@@ -138,7 +140,7 @@ func expectEqualSets<C: Collection>(
   _ ref: Set<C.Element>,
   _ message: @autoclosure () -> String = "",
   trapping: Bool = false,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) {
   var ref = ref
@@ -176,7 +178,7 @@ func expectEqualDictionaries<Key: Hashable, Value: Equatable>(
   _ ref: [(key: Key, value: Value)],
   _ message: @autoclosure () -> String = "",
   trapping: Bool = false,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) {
   expectEqualDictionaries(
@@ -191,7 +193,7 @@ func expectEqualDictionaries<Key: Hashable, Value: Equatable>(
   _ dict: Dictionary<Key, Value>,
   _ message: @autoclosure () -> String = "",
   trapping: Bool = false,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) {
   expectEqual(map.count, dict.count, "Mismatching count", file: file, line: line)

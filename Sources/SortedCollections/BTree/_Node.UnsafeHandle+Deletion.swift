@@ -2,12 +2,16 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
+
+#if UnstableSortedCollections
 
 extension _Node.UnsafeHandle {
   /// Removes the key-value pair corresponding to the first found instance of the key.
@@ -106,9 +110,14 @@ extension _Node.UnsafeHandle {
         startIndex + self[childAt: childSlot].read { $0.subtreeCount }
       
       if offset < endIndex {
-        return self[childAt: childSlot].update {
+        let element = self[childAt: childSlot].update {
           $0.remove(at: offset - startIndex)
         }
+        
+        // Reduce the subtree count.
+        self.subtreeCount -= 1
+        
+        return element
       } else if offset == endIndex {
         let predecessor = self[childAt: childSlot].update {
           $0.popLastElement()
@@ -484,3 +493,5 @@ extension _Node.UnsafeHandle {
     }
   }
 }
+
+#endif

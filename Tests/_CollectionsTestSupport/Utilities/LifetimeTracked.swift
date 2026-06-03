@@ -1,14 +1,21 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift.org open source project
+// This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2014 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
-// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
+
+#if COLLECTIONS_SINGLE_MODULE
+import Collections
+#else
+import BasicContainers
+#endif
 
 /// A type that tracks the number of live instances.
 ///
@@ -32,7 +39,7 @@ public class LifetimeTracked<Payload> {
   public let payload: Payload
 
   public init(_ payload: Payload, for tracker: LifetimeTracker) {
-    tracker.instances += 1
+    tracker._instances += 1
     tracker._nextSerialNumber += 1
     self.tracker = tracker
     self.serialNumber = tracker._nextSerialNumber
@@ -41,7 +48,7 @@ public class LifetimeTracked<Payload> {
 
   deinit {
     precondition(serialNumber != 0, "Double deinit")
-    tracker.instances -= 1
+    tracker._instances -= 1
     serialNumber = -serialNumber
   }
 }

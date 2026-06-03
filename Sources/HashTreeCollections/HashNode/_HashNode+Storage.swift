@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -26,6 +28,7 @@ internal typealias _RawHashStorage = ManagedBuffer<_HashNodeHeader, _RawHashNode
 /// `_HashNode.Storage` subclass is to allow storage instances to properly
 /// clean up after themselves in their `deinit` method.)
 @usableFromInline
+nonisolated(unsafe)
 internal let _emptySingleton: _RawHashStorage = _RawHashStorage.create(
   minimumCapacity: 0,
   makingHeaderWith: { _ in _HashNodeHeader(byteCapacity: 0) })
@@ -41,6 +44,7 @@ extension _HashNode {
     @usableFromInline
     internal typealias UnsafeHandle = _HashNode<Key, Value>.UnsafeHandle
 
+    @inlinable
     deinit {
       UnsafeHandle.update(self) { handle in
         handle.children.deinitialize()
@@ -77,10 +81,15 @@ extension _HashNode.Storage {
       bytes += itemAlignment - childAlignment
     }
 
+    let mincap = (bytes &+ childStride &- 1) / childStride
     let object = _HashNode.Storage.create(
-      minimumCapacity: (bytes &+ childStride &- 1) / childStride
+      minimumCapacity: mincap
     ) { buffer in
+#if os(OpenBSD)
+      _HashNodeHeader(byteCapacity: mincap * childStride)
+#else
       _HashNodeHeader(byteCapacity: buffer.capacity * childStride)
+#endif
     }
 
     object.withUnsafeMutablePointers { header, elements in

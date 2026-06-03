@@ -1,12 +1,13 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift.org open source project
+// This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2014 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
-// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -44,7 +45,7 @@ public func checkBidirectionalCollection<C: BidirectionalCollection, S: Sequence
   _ collection: C,
   expectedContents: S,
   maxSamples: Int? = nil,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) where C.Element: Equatable, S.Element == C.Element {
   checkBidirectionalCollection(
@@ -61,7 +62,7 @@ public func checkBidirectionalCollection<C: BidirectionalCollection, S: Sequence
   expectedContents: S,
   by areEquivalent: (S.Element, S.Element) -> Bool,
   maxSamples: Int? = nil,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) where S.Element == C.Element {
   checkSequence(
@@ -87,7 +88,7 @@ public func _checkBidirectionalCollection_indexOffsetBy<
   expectedContents: [C.Element],
   by areEquivalent: (C.Element, C.Element) -> Bool,
   maxSamples: Int? = nil,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) {
   var allIndices = collection._indicesByIndexAfter()
@@ -140,7 +141,7 @@ public func _checkBidirectionalCollection<C: BidirectionalCollection, S: Sequenc
   expectedContents: S,
   by areEquivalent: (S.Element, S.Element) -> Bool,
   maxSamples: Int? = nil,
-  file: StaticString = #file,
+  file: StaticString = #filePath,
   line: UInt = #line
 ) where S.Element == C.Element {
   let entry = TestContext.current.push("checkBidirectionalCollection", file: file, line: line)

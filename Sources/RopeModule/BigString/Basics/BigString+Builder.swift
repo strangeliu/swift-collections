@@ -2,26 +2,28 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString {
   struct Builder {
     typealias _Chunk = BigString._Chunk
     typealias _Ingester = BigString._Ingester
     typealias _Rope = BigString._Rope
-    
+
     var base: _Rope.Builder
     var suffixStartState: _CharacterRecognizer
     var prefixEndState: _CharacterRecognizer
-    
+
     init(
       base: _Rope.Builder,
       prefixEndState: _CharacterRecognizer,
@@ -40,7 +42,7 @@ extension BigString {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension Rope<BigString._Chunk>.Builder {
   internal func _breakState() -> _CharacterRecognizer {
     let chars = self.prefixSummary.characters
@@ -49,9 +51,9 @@ extension Rope<BigString._Chunk>.Builder {
     var state = _CharacterRecognizer()
     _ = self.forEachElementInPrefix(from: chars - 1, in: metric) { chunk, i in
       if let i {
-        state = .init(partialCharacter: chunk.string[i...])
+        state = .init(partialCharacter: chunk.utf8Span(from: i))
       } else {
-        state.consumePartialCharacter(chunk.string[...])
+        state.consumePartialCharacter(chunk.utf8Span)
       }
       return true
     }
@@ -59,16 +61,16 @@ extension Rope<BigString._Chunk>.Builder {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.Builder {
   mutating func append(_ str: __owned some StringProtocol) {
     append(Substring(str))
   }
-  
+
   mutating func append(_ str: __owned String) {
     append(str[...])
   }
-  
+
   mutating func append(_ str: __owned Substring) {
     guard !str.isEmpty else { return }
     var ingester = _Ingester(str, startState: self.prefixEndState)
@@ -83,18 +85,18 @@ extension BigString.Builder {
     }
     self.prefixEndState = ingester.state
   }
-  
+
   mutating func append(_ newChunk: __owned _Chunk) {
     var state = _CharacterRecognizer()
     append(newChunk, state: &state)
   }
-  
+
   mutating func append(_ newChunk: __owned _Chunk, state: inout _CharacterRecognizer) {
     var newChunk = newChunk
     newChunk.resyncBreaksFromStartToEnd(old: &state, new: &self.prefixEndState)
     self.base.insertBeforeTip(newChunk)
   }
-  
+
   mutating func append(_ other: __owned BigString) {
     var state = _CharacterRecognizer()
     append(other._rope, state: &state)
@@ -111,7 +113,7 @@ extension BigString.Builder {
     other._rope.resyncBreaksToEnd(old: &state, new: &self.prefixEndState)
     self.base.insertBeforeTip(other._rope)
   }
-  
+
   mutating func append(from ingester: inout _Ingester) {
     //assert(ingester.state._isKnownEqual(to: self.prefixEndState))
     if var prefix = base._prefix._take() {
@@ -120,9 +122,9 @@ extension BigString.Builder {
       }
       base._prefix = prefix
     }
-    
+
     let suffixCount = base._suffix?.value.utf8Count ?? 0
-    
+
     while let chunk = ingester.nextWellSizedChunk(suffix: suffixCount) {
       base.insertBeforeTip(chunk)
     }
@@ -131,7 +133,7 @@ extension BigString.Builder {
   }
 }
 
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 extension BigString.Builder {
   mutating func finalize() -> BigString {
     // Resync breaks in suffix.
@@ -146,4 +148,4 @@ extension BigString.Builder {
   }
 }
 
-#endif
+#endif // compiler(>=6.2) && !$Embedded

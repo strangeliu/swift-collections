@@ -2,16 +2,14 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
-
-#if swift(<5.8) && !COLLECTIONS_SINGLE_MODULE
-import InternalCollectionsUtilities // for 5.8 polyfills
-#endif
 
 extension Rope {
   @frozen // Not really! This module isn't ABI stable.
@@ -138,15 +136,19 @@ extension Rope._Node {
 }
 
 extension Rope._Node {
-  @inlinable @inline(__always)
+  @inlinable
+  @_transparent
   internal mutating func isUnique() -> Bool {
     isKnownUniquelyReferenced(&object)
   }
 
   @inlinable
   internal mutating func ensureUnique() {
-    guard !isKnownUniquelyReferenced(&object) else { return }
+    guard !isKnownUniquelyReferenced(&object) else {
+      return
+    }
     self = copy()
+    assert(isUnique())
   }
 
   @inlinable @inline(never)

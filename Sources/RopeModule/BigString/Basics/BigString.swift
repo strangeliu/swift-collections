@@ -2,32 +2,28 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2023 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2023 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
 //
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+//
 //===----------------------------------------------------------------------===//
 
-#if swift(>=5.8)
+#if compiler(>=6.2) && !$Embedded
 
 /// The core of a B-tree based String implementation.
-@available(macOS 13.3, iOS 16.4, watchOS 9.4, tvOS 16.4, *)
+@available(SwiftStdlib 6.2, *)
 public struct BigString: Sendable {
   typealias _Rope = Rope<_Chunk>
 
+  nonisolated(unsafe)
   var _rope: _Rope
-  
+
   internal init(_rope: _Rope) {
     self._rope = _rope
   }
 }
 
-#else
-
-// `BigString` depends on fixes and newly exposed functionality that landed in
-// version 5.8 of the Swift Standard Library.
-@available(*, unavailable, message: "BigString depends on version 5.8 of the Swift Standard Library")
-public struct BigString: Sendable {}
-
-#endif
+#endif // compiler(>=6.2) && !$Embedded

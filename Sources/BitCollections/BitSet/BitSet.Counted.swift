@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2022 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -175,6 +177,7 @@ extension BitSet.Counted: BidirectionalCollection {
 }
 
 
+#if !$Embedded
 extension BitSet.Counted: Codable {
   public func encode(to encoder: Encoder) throws {
     try _bits.encode(to: encoder)
@@ -184,7 +187,9 @@ extension BitSet.Counted: Codable {
     self.init(try BitSet(from: decoder))
   }
 }
+#endif
 
+#if !$Embedded
 extension BitSet.Counted: CustomStringConvertible {
   // A textual representation of this instance.
   public var description: String {
@@ -198,12 +203,15 @@ extension BitSet.Counted: CustomDebugStringConvertible {
     description
   }
 }
+#endif
 
+#if !$Embedded
 extension BitSet.Counted: CustomReflectable {
   public var customMirror: Mirror {
     _bits.customMirror
   }
 }
+#endif
 
 extension BitSet.Counted: Equatable {
   public static func ==(left: Self, right: Self) -> Bool {
@@ -858,8 +866,6 @@ extension BitSet.Counted {
   ///
   /// - Parameter other: A range of arbitrary integers.
   ///
-  /// - Returns: A new set.
-  ///
   /// - Complexity: O(*max*), where *max* is the largest item in self.
   public mutating func subtract(_ other: Range<Int>) {
     _bits.subtract(other)
@@ -894,7 +900,7 @@ extension BitSet.Counted {
   ///
   /// - Complexity: O(*max*), where *max* is value of the largest member of
   ///     either set.
-  public func isEqualSet(to other: Self) -> Bool {
+  public func isEqualSet(to other: BitSet.Counted) -> Bool {
     guard self.count == other.count else { return false }
     return self._bits.isEqualSet(to: other._bits)
   }
@@ -956,7 +962,7 @@ extension BitSet.Counted {
   /// - Returns: `true` if the set is a subset of `other`; otherwise, `false`.
   ///
   /// - Complexity: O(*max*), where *max* is the largest item in `self`.
-  public func isSubset(of other: Self) -> Bool {
+  public func isSubset(of other: BitSet.Counted) -> Bool {
     if self.count > other.count { return false }
     return self._bits.isSubset(of: other._bits)
   }
@@ -1039,7 +1045,7 @@ extension BitSet.Counted {
   /// - Returns: `true` if the set is a superset of `other`; otherwise, `false`.
   ///
   /// - Complexity: O(*max*), where *max* is the largest item in `other`.
-  public func isSuperset(of other: Self) -> Bool {
+  public func isSuperset(of other: BitSet.Counted) -> Bool {
     other.isSubset(of: self)
   }
 
@@ -1123,7 +1129,7 @@ extension BitSet.Counted {
   ///     otherwise, `false`.
   ///
   /// - Complexity: O(*max*), where *max* is the largest item in `self`.
-  public func isStrictSubset(of other: Self) -> Bool {
+  public func isStrictSubset(of other: BitSet.Counted) -> Bool {
     guard self.count < other.count else { return false }
     return _bits.isStrictSubset(of: other._bits)
   }
@@ -1214,7 +1220,7 @@ extension BitSet.Counted {
   /// - Returns: `true` if the set is a superset of `other`; otherwise, `false`.
   ///
   /// - Complexity: O(*max*), where *max* is the largest item in `other`.
-  public func isStrictSuperset(of other: Self) -> Bool {
+  public func isStrictSuperset(of other: BitSet.Counted) -> Bool {
     other.isStrictSubset(of: self)
   }
 
@@ -1292,7 +1298,7 @@ extension BitSet.Counted {
   ///   otherwise, `false`.
   ///
   /// - Complexity: O(*max*), where *max* is the largest item in either input.
-  public func isDisjoint(with other: Self) -> Bool {
+  public func isDisjoint(with other: BitSet.Counted) -> Bool {
     _bits.isDisjoint(with: other._bits)
   }
 

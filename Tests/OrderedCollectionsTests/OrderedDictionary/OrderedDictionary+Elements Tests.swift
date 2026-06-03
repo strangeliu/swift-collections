@@ -2,10 +2,12 @@
 //
 // This source file is part of the Swift Collections open source project
 //
-// Copyright (c) 2021 - 2024 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -168,6 +170,61 @@ class OrderedDictionaryElementsTests: CollectionTestCase {
                 expectEqual(d[reference[i].key], reference[i].value)
                 expectEqual(d[reference[j].key], reference[j].value)
               }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  func test_replaceElement() {
+    withEvery("count", in: 1 ..< 20) { count in
+      withEvery("index", in: 0 ..< count) { index in
+        withEvery("isShared", in: [false, true]) { isShared in
+          withLifetimeTracking { tracker in
+            var (d, reference) = tracker.orderedDictionary(keys: 0 ..< count)
+            let newKey = tracker.instance(for: count)
+            let newValue = tracker.instance(for: count + 100)
+            let expectedOld = reference[index]
+            reference[index] = (key: newKey, value: newValue)
+            withHiddenCopies(if: isShared, of: &d, checker: { $0._checkInvariants() }) { d in
+              let old = d.elements.replaceElement(
+                at: index, withKey: newKey, value: newValue)
+              expectEqual(old.key, expectedOld.key)
+              expectEqual(old.value, expectedOld.value)
+              expectEquivalentElements(
+                d, reference,
+                by: { $0.key == $1.key && $0.value == $1.value })
+              expectEqual(d[newKey], newValue)
+              expectNil(d[expectedOld.key])
+            }
+          }
+        }
+      }
+    }
+  }
+
+  func test_replaceElement_sameKey() {
+    withEvery("count", in: 1 ..< 20) { count in
+      withEvery("index", in: 0 ..< count) { index in
+        withEvery("isShared", in: [false, true]) { isShared in
+          withLifetimeTracking { tracker in
+            var (d, reference) = tracker.orderedDictionary(keys: 0 ..< count)
+            // Same payload as the existing key at `index` — equal but a
+            // distinct instance, exercising the in-place replacement path.
+            let newKey = tracker.instance(for: index)
+            let newValue = tracker.instance(for: count + 100)
+            let expectedOld = reference[index]
+            reference[index] = (key: newKey, value: newValue)
+            withHiddenCopies(if: isShared, of: &d, checker: { $0._checkInvariants() }) { d in
+              let old = d.elements.replaceElement(
+                at: index, withKey: newKey, value: newValue)
+              expectEqual(old.key, expectedOld.key)
+              expectEqual(old.value, expectedOld.value)
+              expectEquivalentElements(
+                d, reference,
+                by: { $0.key == $1.key && $0.value == $1.value })
+              expectEqual(d[newKey], newValue)
             }
           }
         }
